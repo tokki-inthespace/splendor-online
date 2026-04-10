@@ -333,7 +333,16 @@ body {
 .player-name { font-weight: 700; font-size: 1rem; }
 .player-score { font-weight: 700; font-size: 1.1rem; color: #f0c040; }
 
-.player-tokens { display: flex; gap: 6px; flex-wrap: wrap; }
+.player-tokens { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+.token-total {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #888;
+  margin-left: 4px;
+}
+
+.token-total.at-limit { color: #F44336; }
 
 .token-mini {
   display: inline-flex;
@@ -347,7 +356,27 @@ body {
   border: 1px solid rgba(255,255,255,0.15);
 }
 
-.player-cards { display: flex; align-items: center; gap: 6px; }
+.player-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bonus-summary {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.bonus-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
 
 .owned-cards {
   display: flex;

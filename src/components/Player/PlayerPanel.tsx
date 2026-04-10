@@ -1,6 +1,6 @@
 import type { Player, Card, GemColor } from '../../types/game';
 import { GEM_STYLE, TOKEN_STYLE, GEM_COLORS } from '../../utils/gemColors';
-import { getPlayerScore } from '../../game/gameLogic';
+import { getPlayerBonuses, getPlayerScore, getTotalTokenCount } from '../../game/gameLogic';
 
 const COLOR_ORDER: Record<GemColor, number> = Object.fromEntries(
   GEM_COLORS.map((c, i) => [c, i])
@@ -19,6 +19,8 @@ interface Props {
 
 export function PlayerPanel({ player, isOpponent, isCurrentTurn, onReservedCardClick }: Props) {
   const score = getPlayerScore(player);
+  const bonuses = getPlayerBonuses(player);
+  const totalTokens = getTotalTokenCount(player);
 
   return (
     <div className={`player-panel ${isOpponent ? 'opponent' : 'self'} ${isCurrentTurn ? 'current-turn' : ''}`}>
@@ -43,22 +45,37 @@ export function PlayerPanel({ player, isOpponent, isCurrentTurn, onReservedCardC
             </span>
           </span>
         )}
+        <span className={`token-total ${totalTokens >= 10 ? 'at-limit' : ''}`}>
+          {totalTokens}/10
+        </span>
       </div>
 
-      {/* 구매한 카드 */}
+      {/* 구매한 카드 + 보너스 요약 */}
       <div className="player-cards">
         {player.cards.length > 0 ? (
-          <div className="owned-cards">
-            {sortByColor(player.cards).map(card => (
-              <div
-                key={card.id}
-                className="owned-card-mini"
-                style={{ backgroundColor: GEM_STYLE[card.color].bg, color: GEM_STYLE[card.color].text }}
-              >
-                {card.points > 0 ? card.points : ''}
-              </div>
-            ))}
-          </div>
+          <>
+            <div className="bonus-summary">
+              {GEM_COLORS.map(color => {
+                const count = bonuses[color];
+                return count > 0 ? (
+                  <span key={color} className="bonus-badge" style={{ backgroundColor: GEM_STYLE[color].bg, color: GEM_STYLE[color].text }}>
+                    {count}
+                  </span>
+                ) : null;
+              })}
+            </div>
+            <div className="owned-cards">
+              {sortByColor(player.cards).map(card => (
+                <div
+                  key={card.id}
+                  className="owned-card-mini"
+                  style={{ backgroundColor: GEM_STYLE[card.color].bg, color: GEM_STYLE[card.color].text }}
+                >
+                  {card.points > 0 ? card.points : ''}
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
           <span className="no-bonus">구매한 카드 없음</span>
         )}
