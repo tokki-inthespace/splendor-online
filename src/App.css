@@ -1,1 +1,512 @@
-/* App-level styles */
+/* ─── 전역 ──────────────────────────── */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #1a1a2e;
+  color: #e0e0e0;
+  min-height: 100vh;
+}
+
+/* ─── 시작 화면 ─────────────────────── */
+
+.start-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 12px;
+}
+
+.start-title {
+  font-size: 2.5rem;
+  color: #f0c040;
+}
+
+.start-subtitle {
+  color: #888;
+  margin-bottom: 16px;
+}
+
+.start-form {
+  display: flex;
+  gap: 8px;
+}
+
+.name-input {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background: #2a2a3e;
+  color: #e0e0e0;
+  font-size: 1rem;
+  outline: none;
+}
+
+.name-input:focus { border-color: #f0c040; }
+
+/* ─── 버튼 공통 ─────────────────────── */
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-start { background: #f0c040; color: #1a1a2e; padding: 10px 24px; font-size: 1rem; }
+.btn-confirm { background: #4CAF50; color: #fff; }
+.btn-cancel { background: #666; color: #fff; }
+.btn-reserve { background: #FF9800; color: #fff; }
+
+/* ─── 게임 레이아웃 ──────────────────── */
+
+.game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  gap: 12px;
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* ─── 보드 ───────────────────────────── */
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* 귀족 행 */
+.noble-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.noble-tile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 2px solid #9C27B0;
+  border-radius: 8px;
+  background: #2a2a3e;
+}
+
+.noble-points {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #CE93D8;
+  min-width: 20px;
+}
+
+.noble-req { display: flex; gap: 4px; }
+
+/* 카드 행 */
+.card-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.deck-slot {
+  width: 80px;
+  min-height: 100px;
+  border: 2px dashed #555;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: #2a2a3e;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.deck-slot:hover:not(.empty) { border-color: #aaa; }
+.deck-slot.empty { opacity: 0.3; cursor: default; }
+
+.deck-level { font-weight: 700; font-size: 1.2rem; color: #aaa; }
+.deck-count { font-size: 0.8rem; color: #666; }
+
+.card-slot {
+  flex: 1;
+  min-height: 100px;
+  border: 2px solid #444;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  background: #2a2a3e;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+  overflow: hidden;
+}
+
+.card-slot:hover:not(.disabled):not(.empty) {
+  transform: translateY(-2px);
+  border-color: #f0c040;
+}
+
+.card-slot.disabled { opacity: 0.5; cursor: default; }
+.card-slot.empty { border-style: dashed; opacity: 0.2; cursor: default; }
+.card-slot.highlight { border-color: #f0c040; box-shadow: 0 0 8px rgba(240, 192, 64, 0.3); }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  font-weight: 700;
+}
+
+.card-points { font-size: 1.1rem; }
+.card-gem { font-size: 0.9rem; }
+
+.card-cost {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.cost-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.cost-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid rgba(255,255,255,0.2);
+  flex-shrink: 0;
+}
+
+.cost-num { font-weight: 600; }
+
+/* 토큰 풀 */
+.token-pool {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.token-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: transform 0.15s;
+  position: relative;
+}
+
+.token-stack:hover:not(.disabled) { transform: scale(1.1); }
+.token-stack.disabled { opacity: 0.5; cursor: default; }
+.token-stack.selected .token-circle { box-shadow: 0 0 0 3px #f0c040; }
+
+.token-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  border: 2px solid rgba(255,255,255,0.15);
+}
+
+.token-circle.small {
+  width: 36px;
+  height: 36px;
+  font-size: 0.9rem;
+}
+
+.token-selected-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #f0c040;
+  color: #1a1a2e;
+  font-size: 0.7rem;
+  font-weight: 700;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.token-label { font-size: 0.7rem; color: #888; }
+
+/* ─── 플레이어 패널 ──────────────────── */
+
+.player-panel {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #333;
+  border-radius: 10px;
+  background: #222238;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.player-panel.current-turn { border-color: #f0c040; }
+.player-panel.opponent { opacity: 0.85; }
+
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.player-name { font-weight: 700; font-size: 1rem; }
+.player-score { font-weight: 700; font-size: 1.1rem; color: #f0c040; }
+
+.player-tokens { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.token-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.8rem;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.player-bonuses { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.bonus-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.85rem;
+}
+
+.bonus-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.bonus-num { font-weight: 600; }
+.no-bonus { font-size: 0.8rem; color: #666; }
+
+.section-label {
+  font-size: 0.75rem;
+  color: #888;
+  margin-right: 6px;
+}
+
+.player-reserved { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+
+.reserved-cards { display: flex; gap: 4px; }
+
+.reserved-card-mini {
+  width: 40px;
+  height: 52px;
+  border: 2px solid #555;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: #2a2a3e;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.reserved-card-mini:hover { border-color: #f0c040; }
+
+.mini-gem {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  font-size: 0;
+}
+
+.reserved-card-back {
+  width: 40px;
+  height: 52px;
+  border: 2px solid #555;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #333;
+  color: #666;
+  font-size: 1.2rem;
+}
+
+.player-nobles { display: flex; align-items: center; gap: 4px; }
+
+.noble-mini {
+  background: #9C27B0;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* ─── 액션 바 ────────────────────────── */
+
+.action-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #2a2a3e;
+  border-top: 2px solid #444;
+  z-index: 10;
+}
+
+.action-label { font-size: 0.9rem; color: #aaa; }
+
+.action-token {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.ai-bar { color: #888; font-style: italic; }
+
+/* ─── 모달 ───────────────────────────── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.modal {
+  background: #2a2a3e;
+  border: 2px solid #555;
+  border-radius: 12px;
+  padding: 20px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.modal-card { display: flex; flex-direction: column; gap: 8px; }
+
+.modal-card-header {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.modal-card-cost { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.modal-actions { display: flex; gap: 8px; justify-content: center; }
+
+/* 토큰 버리기 */
+.discard-tokens {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.discard-item {
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.discard-item:hover { transform: scale(1.1); }
+
+.discard-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #C62828;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 게임 오버 */
+.game-over { text-align: center; }
+.winner-name { font-size: 1.5rem; font-weight: 700; color: #f0c040; }
+.winner-score { font-size: 0.9rem; color: #aaa; }
+
+/* ─── 에러 바 ────────────────────────── */
+
+.error-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #C62828;
+  color: #fff;
+  padding: 10px 16px;
+  text-align: center;
+  cursor: pointer;
+  z-index: 30;
+  font-size: 0.9rem;
+}
+
+.error-close { margin-left: 8px; opacity: 0.7; }
+
+/* 하단 액션바 공간 확보 */
+.game { padding-bottom: 60px; }
