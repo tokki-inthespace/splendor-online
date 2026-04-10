@@ -74,7 +74,7 @@ body {
   align-items: center;
   padding: 16px;
   gap: 12px;
-  max-width: 800px;
+  max-width: 1100px;
   margin: 0 auto;
   position: relative;
 }
@@ -84,36 +84,85 @@ body {
 .board {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
 }
 
-/* 귀족 행 */
+.board-top {
+  display: flex;
+  gap: 16px;
+}
+
+.board-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.board-right {
+  width: 130px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.section-title {
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #333;
+  margin-bottom: 2px;
+}
+
+/* 귀족 행 (세로, 컴팩트) */
 .noble-row {
   display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 4px;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .noble-tile {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border: 2px solid #9C27B0;
-  border-radius: 8px;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid #7B1FA2;
+  border-radius: 6px;
   background: #2a2a3e;
+  font-size: 0.8rem;
 }
 
 .noble-points {
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 0.85rem;
   color: #CE93D8;
-  min-width: 20px;
+  min-width: 16px;
 }
 
-.noble-req { display: flex; gap: 4px; }
+.noble-req { display: flex; gap: 3px; flex-wrap: wrap; }
+
+.noble-req-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.75rem;
+}
+
+.noble-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid rgba(255,255,255,0.2);
+  flex-shrink: 0;
+}
+
+.noble-num { font-weight: 600; }
 
 /* 카드 행 */
 .card-row {
@@ -124,7 +173,7 @@ body {
 
 .deck-slot {
   width: 80px;
-  min-height: 100px;
+  min-height: 110px;
   border: 2px dashed #555;
   border-radius: 8px;
   display: flex;
@@ -146,7 +195,7 @@ body {
 
 .card-slot {
   flex: 1;
-  min-height: 100px;
+  min-height: 110px;
   border: 2px solid #444;
   border-radius: 8px;
   display: flex;
@@ -175,7 +224,6 @@ body {
 }
 
 .card-points { font-size: 1.1rem; }
-.card-gem { font-size: 0.9rem; }
 
 .card-cost {
   padding: 8px;
@@ -203,12 +251,11 @@ body {
 
 .cost-num { font-weight: 600; }
 
-/* 토큰 풀 */
+/* 토큰 풀 (가로 배치) */
 .token-pool {
   display: flex;
   gap: 8px;
   justify-content: center;
-  margin-top: 4px;
 }
 
 .token-stack {
@@ -300,24 +347,26 @@ body {
   border: 1px solid rgba(255,255,255,0.15);
 }
 
-.player-bonuses { display: flex; gap: 6px; flex-wrap: wrap; }
+.player-cards { display: flex; align-items: center; gap: 6px; }
 
-.bonus-item {
+.owned-cards {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.owned-card-mini {
+  width: 28px;
+  height: 36px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
-  gap: 3px;
-  font-size: 0.85rem;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  border: 1px solid rgba(255,255,255,0.15);
 }
 
-.bonus-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-  border: 1px solid rgba(255,255,255,0.2);
-}
-
-.bonus-num { font-weight: 600; }
 .no-bonus { font-size: 0.8rem; color: #666; }
 
 .section-label {

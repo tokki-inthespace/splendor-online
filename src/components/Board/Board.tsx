@@ -15,18 +15,25 @@ interface Props {
 export function Board({ gameState, onCardClick, onDeckClick, selectedTokens, onTokenClick, disabled }: Props) {
   return (
     <div className="board">
-      <NobleRow nobles={gameState.nobles} />
-      {([3, 2, 1] as const).map(level => (
-        <CardRow
-          key={level}
-          level={level}
-          cards={gameState.visibleCards[level]}
-          deckCount={gameState.deck[level].length}
-          onCardClick={onCardClick}
-          onDeckClick={() => onDeckClick?.(level)}
-          disabled={disabled}
-        />
-      ))}
+      <div className="board-top">
+        <div className="board-left">
+          {([3, 2, 1] as const).map(level => (
+            <CardRow
+              key={level}
+              level={level}
+              cards={gameState.visibleCards[level]}
+              deckCount={gameState.deck[level].length}
+              onCardClick={onCardClick}
+              onDeckClick={() => onDeckClick?.(level)}
+              disabled={disabled}
+            />
+          ))}
+        </div>
+        <div className="board-right">
+          <div className="section-title">귀족</div>
+          <NobleRow nobles={gameState.nobles} />
+        </div>
+      </div>
       <TokenPool
         tokens={gameState.tokens}
         selectedTokens={selectedTokens}

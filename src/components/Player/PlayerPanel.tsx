@@ -1,6 +1,14 @@
-import type { Player, Card } from '../../types/game';
+import type { Player, Card, GemColor } from '../../types/game';
 import { GEM_STYLE, TOKEN_STYLE, GEM_COLORS } from '../../utils/gemColors';
-import { getPlayerBonuses, getPlayerScore } from '../../game/gameLogic';
+import { getPlayerScore } from '../../game/gameLogic';
+
+const COLOR_ORDER: Record<GemColor, number> = Object.fromEntries(
+  GEM_COLORS.map((c, i) => [c, i])
+) as Record<GemColor, number>;
+
+function sortByColor<T extends { color: GemColor }>(items: T[]): T[] {
+  return [...items].sort((a, b) => COLOR_ORDER[a.color] - COLOR_ORDER[b.color]);
+}
 
 interface Props {
   player: Player;
@@ -10,7 +18,6 @@ interface Props {
 }
 
 export function PlayerPanel({ player, isOpponent, isCurrentTurn, onReservedCardClick }: Props) {
-  const bonuses = getPlayerBonuses(player);
   const score = getPlayerScore(player);
 
   return (
@@ -38,18 +45,22 @@ export function PlayerPanel({ player, isOpponent, isCurrentTurn, onReservedCardC
         )}
       </div>
 
-      {/* 카드 보너스 */}
-      <div className="player-bonuses">
-        {GEM_COLORS.map(color => (
-          bonuses[color] > 0 ? (
-            <span key={color} className="bonus-item">
-              <span className="bonus-dot" style={{ backgroundColor: GEM_STYLE[color].bg }} />
-              <span className="bonus-num">{bonuses[color]}</span>
-            </span>
-          ) : null
-        ))}
-        {GEM_COLORS.every(c => bonuses[c] === 0) && (
-          <span className="no-bonus">보너스 없음</span>
+      {/* 구매한 카드 */}
+      <div className="player-cards">
+        {player.cards.length > 0 ? (
+          <div className="owned-cards">
+            {sortByColor(player.cards).map(card => (
+              <div
+                key={card.id}
+                className="owned-card-mini"
+                style={{ backgroundColor: GEM_STYLE[card.color].bg, color: GEM_STYLE[card.color].text }}
+              >
+                {card.points > 0 ? card.points : ''}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span className="no-bonus">구매한 카드 없음</span>
         )}
       </div>
 
@@ -58,7 +69,7 @@ export function PlayerPanel({ player, isOpponent, isCurrentTurn, onReservedCardC
         <div className="player-reserved">
           <span className="section-label">예약 ({player.reservedCards.length}/3)</span>
           <div className="reserved-cards">
-            {player.reservedCards.map(card => (
+            {sortByColor(player.reservedCards).map(card => (
               isOpponent ? (
                 <div key={card.id} className="reserved-card-back">?</div>
               ) : (

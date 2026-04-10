@@ -15,9 +15,9 @@ export function NobleRow({ nobles }: Props) {
             <span className="noble-points">{noble.points}</span>
             <div className="noble-req">
               {reqs.map(color => (
-                <span key={color} className="req-item">
-                  <span className="cost-dot" style={{ backgroundColor: GEM_STYLE[color].bg }} />
-                  <span className="cost-num">{noble.requirement[color]}</span>
+                <span key={color} className="noble-req-item">
+                  <span className="noble-dot" style={{ backgroundColor: GEM_STYLE[color].bg }} />
+                  <span className="noble-num">{noble.requirement[color]}</span>
                 </span>
               ))}
             </div>
