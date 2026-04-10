@@ -1,126 +1,107 @@
 # Splendor Online - 구현 계획
 
 ## 프로젝트 목표
-- **1차 스콥**: 싱글플레이 (플레이어 1명 vs AI 1명)
-- **2차 스콥**: 멀티플레이 실시간 게임 (WebSocket 기반)
+- **1차 스콥**: 싱글플레이 (플레이어 1명 vs AI 1명) — ✅ 완료
+- **2차 스콥**: 실시간 멀티플레이 (WebSocket 기반) — 🔲 다음
+- **3차 스콥**: 일러스트 / 비주얼 폴리싱
 
 ## 기술 스택
 - React + TypeScript + Vite
 - 상태관리: Zustand
 - 스타일링: CSS (App.css 단일 파일)
+- 멀티플레이: WebSocket (예정)
 
 ---
 
-## 현재 완료된 것
-- `src/types/game.ts` — 타입 정의 (Card, Noble, Player, GameState 등)
-- `src/game/cardData.ts` — 카드 데이터 (레벨1 40장, 레벨2 30장, 레벨3 20장, 귀족 10장)
-- `src/game/gameLogic.ts` — 게임 규칙 & 액션 로직 (초기화, 토큰/카드/예약, 귀족, 승리, 턴 관리)
-- `src/game/aiLogic.ts` — Greedy AI (카드 구매 우선, 토큰 수집, 자동 버리기)
-- `src/store/gameStore.ts` — Zustand 스토어 (상태 관리, 턴 흐름, 액션 취소, AI 턴 연결)
-- `src/utils/gemColors.ts` — 보석 색상 상수
-- `src/components/Board/` — Board, CardRow, CardSlot, NobleRow, TokenPool
-- `src/components/Player/PlayerPanel.tsx` — 플레이어 패널 (토큰, 구매 카드, 예약 카드, 귀족)
-- `src/components/Game.tsx` — 메인 게임 화면 + 인터랙션 (토큰 선택, 카드 구매/예약, 버리기, 확정/취소)
-- `src/App.tsx` — 시작 화면 → 게임 전환
-- `src/App.css` — 다크 테마 기반 전체 스타일
+## 1차 스콥 완료 현황
 
----
-
-## 파일 구조
+### 완료된 파일
 
 ```
 src/
 ├── types/
-│   └── game.ts                ✅
+│   └── game.ts                ✅ 타입 정의
 ├── game/
-│   ├── cardData.ts            ✅
-│   ├── gameLogic.ts           ✅
-│   └── aiLogic.ts             ✅
+│   ├── cardData.ts            ✅ 카드/귀족 데이터
+│   ├── gameLogic.ts           ✅ 게임 규칙 & 액션 (순수 함수)
+│   └── aiLogic.ts             ✅ Greedy AI
 ├── store/
-│   └── gameStore.ts           ✅
+│   └── gameStore.ts           ✅ Zustand 상태 + 게임 로그
 ├── utils/
-│   └── gemColors.ts           ✅
+│   └── gemColors.ts           ✅ 색상 상수 + 헬퍼
 ├── components/
 │   ├── Board/
-│   │   ├── Board.tsx          ✅
-│   │   ├── CardRow.tsx        ✅
-│   │   ├── CardSlot.tsx       ✅
-│   │   ├── NobleRow.tsx       ✅
-│   │   └── TokenPool.tsx      ✅
+│   │   ├── Board.tsx          ✅ 보드 레이아웃 (좌: 카드, 우: 귀족)
+│   │   ├── CardRow.tsx        ✅ 레벨별 카드 행
+│   │   ├── CardSlot.tsx       ✅ 카드 한 장
+│   │   ├── NobleRow.tsx       ✅ 귀족 타일 (컴팩트)
+│   │   └── TokenPool.tsx      ✅ 토큰 풀
 │   ├── Player/
-│   │   └── PlayerPanel.tsx    ✅
-│   └── Game.tsx               ✅
-├── App.tsx                    ✅
-└── App.css                    ✅
+│   │   └── PlayerPanel.tsx    ✅ 플레이어 패널 (토큰 N/10, 보너스, 카드, 예약, 귀족)
+│   └── Game.tsx               ✅ 메인 게임 + 인터랙션
+├── App.tsx                    ✅ 시작 화면 → 게임
+└── App.css                    ✅ 다크 테마 스타일
 ```
 
----
+### 완료된 Phase 요약
 
-## Phase 1: 게임 로직 — ✅ 완료
-
-`src/game/gameLogic.ts`에 구현 완료:
-- `initGame` — 덱 셔플, 카드 공개, 귀족 배치, 토큰 세팅
-- `takeTokens` — 다른 색 1~3개 또는 같은 색 2개(4개 이상일 때)
-- `purchaseCard` — 보너스→토큰→골드 순 비용 차감, 덱 보충
-- `reserveCard` / `reserveCardFromDeck` — 예약 + 골드 지급
-- `discardTokens` — 정확히 10개로 맞춰야 함
-- `checkNobles` — 조건 충족 귀족 모두 획득
-- `checkWin` — 라운드 종료 시 최고 점수자 승리, 동점 시 카드 적은 쪽
-- `endTurn` — 귀족 → 승리 체크 → 턴 넘김
+| Phase | 내용 | 상태 |
+|-------|------|------|
+| Phase 1 | 게임 로직 (gameLogic.ts) | ✅ |
+| Phase 2 | 상태 관리 (gameStore.ts + 게임 로그) | ✅ |
+| Phase 3 | UI 컴포넌트 + 인터랙션 + 레이아웃 | ✅ |
+| Phase 4 | AI 로직 (aiLogic.ts) | ✅ |
 
 ---
 
-## Phase 2: 상태 관리 — ✅ 완료
+## 2차 스콥: 실시간 멀티플레이 — 🔲 다음 작업
 
-`src/store/gameStore.ts`에 구현 완료:
-- `turnPhase` (idle → action / discarding) 흐름 제어
-- `previousState`로 액션 취소 지원
-- 모든 액션에 `turnPhase !== 'idle'` 가드
-- `confirmTurn`에 `turnPhase !== 'action'` 가드 (버리기 강제)
-- AI 턴: setTimeout(1초) 후 `executeAiTurn` 실행
+### 왜 일러스트보다 멀티플레이가 먼저인가?
+- 멀티플레이는 게임 구조를 바꿈 (서버/클라이언트 분리, 상태 동기화)
+- 구조 변경 후 일러스트를 입히면 이중 작업 없음
+- 일러스트는 CSS/이미지 교체만으로 가능해서 마지막에 하는 게 효율적
+- gameLogic이 순수 함수로 잘 분리돼 있어 서버로 옮기기 좋은 상태
+
+### 구현 방향 (검토 필요)
+
+**서버 측:**
+- WebSocket 서버 (Node.js + ws 또는 Socket.IO)
+- 방 생성 / 참가 / 매칭
+- gameLogic을 서버에서 실행 (게임 상태는 서버가 관리)
+- 클라이언트에게 상태 브로드캐스트
+
+**클라이언트 측:**
+- WebSocket 연결
+- 서버에 액션 전송 (토큰 선택, 카드 구매 등)
+- 서버로부터 상태 수신 → UI 업데이트
+- 상대 턴 대기 UI
+
+**고려할 점:**
+- [ ] 서버 기술 선택: Node.js ws / Socket.IO / 기타
+- [ ] 배포 환경: Vercel + 별도 WS 서버 / Railway / Fly.io 등
+- [ ] 방 시스템: 초대 코드 방식 vs 랜덤 매칭
+- [ ] 기존 싱글플레이 (vs AI) 유지 여부
+- [ ] 2인 전용 vs 2~4인 지원
+- [ ] 재접속 / 연결 끊김 처리
+- [ ] gameLogic.ts를 서버/클라이언트 공유 (모노레포 또는 공통 패키지)
+
+### 작업 순서 (예상)
+1. 서버 프로젝트 세팅 + WebSocket 기본 연결
+2. 방 생성 / 참가 흐름
+3. gameLogic을 서버에서 실행하도록 이동
+4. 클라이언트 → 서버 액션 전송 / 서버 → 클라이언트 상태 수신
+5. 상대 턴 대기 UI + 턴 타이머 (선택)
+6. 배포
 
 ---
 
-## Phase 3: UI 컴포넌트 — ✅ 완료
+## 3차 스콥: 일러스트 / 비주얼 폴리싱
 
-### 보드 레이아웃
-```
-+──────────────────────────────────────────+
-│                 AI 패널                   │
-+──────────────────────────────────────────+
-│                            │             │
-│  [III] [카드][카드][카드][카드] │  귀족       │
-│  [II]  [카드][카드][카드][카드] │  (컴팩트)   │
-│  [I]   [카드][카드][카드][카드] │             │
-│                            │             │
-+──────────────────────────────────────────+
-│    [⚪] [⚫] [🔴] [🔵] [🟢] [★]         │
-+──────────────────────────────────────────+
-│                 내 패널                   │
-│  토큰(N/10) | 보너스 | 구매 카드 | 예약 | 귀족 │
-+──────────────────────────────────────────+
-```
-
-### 인터랙션 (Game.tsx에서 처리)
-1. ✅ 토큰 클릭으로 선택 → 가져오기 확인
-2. ✅ 카드 클릭 → 구매/예약 모달
-3. ✅ 덱 클릭 → 덱에서 예약
-4. ✅ 예약 카드 클릭 → 구매 모달
-5. ✅ 토큰 10개 초과 → 버리기 모달
-6. ✅ 턴 확정 / 취소(되돌리기)
-7. ✅ 게임 종료 화면
-
----
-
-## Phase 4: AI 로직 — ✅ 완료
-
-`src/game/aiLogic.ts`에 구현 완료:
-- `executeAiTurn` — AI 턴 전체 실행 (액션 → 버리기 → endTurn)
-- 전략 1: 구매 가능한 카드 중 점수 최고 구매 (동점이면 비용 저렴한 것)
-- 전략 2: deficit 가장 적은 카드 기준으로 부족한 토큰 수집 (선호 색 + 나머지로 3개 채움)
-- 폴백: 아무 토큰이나 최대한 수집
-- 10개 초과 시 자동 버리기 (가장 많이 보유한 색부터)
-- `gameStore.ts`에서 AI 턴 시 `executeAiTurn` 호출로 연결
+- CSS 배경색 → 보석 이미지/SVG 아이콘 교체
+- 카드 일러스트 추가
+- 귀족 타일 이미지
+- 애니메이션 (카드 구매, 토큰 이동 등)
+- 사운드 효과 (선택)
 
 ---
 
@@ -135,20 +116,17 @@ src/
 ---
 
 ## 결정된 사항
-- [x] 스타일링: CSS 단일 파일 (App.css), 나중에 일러스트 교체 가능
+- [x] 스타일링: CSS 단일 파일 → 나중에 일러스트 교체
 - [x] 토큰 버리기: 모달 방식
 - [x] 귀족 중복 충족 시: 모두 획득
 - [x] 보석 색상 순서: white → black → red → blue → green
+- [x] 게임 로그: 스토어에 기록 (UI 노출은 나중에)
+- [x] 작업 순서: 멀티플레이 → 일러스트 (구조 변경 먼저, 비주얼은 마지막)
 
 ## 미결 결정 사항
-- [ ] 게임 로그 패널 포함 여부
+- [ ] 게임 로그 UI 패널 추가 여부
 - [ ] 덱에서 예약 시 카드 앞면/뒷면 표시
-
-## 작업 순서
-1. ~~`gameLogic.ts` (핵심 로직)~~ ✅
-2. ~~`gameStore.ts` (Zustand 연결)~~ ✅
-3. ~~기본 UI: Board, CardSlot, PlayerPanel~~ ✅
-4. ~~인터랙션 (모달, 토큰 선택)~~ ✅
-5. ~~레이아웃 개선~~ ✅
-6. ~~`aiLogic.ts`~~ ✅
-7. 스타일링 / 폴리싱 ← 다음
+- [ ] 멀티플레이 서버 기술 선택
+- [ ] 배포 환경
+- [ ] 방 시스템 방식 (초대 코드 vs 랜덤 매칭)
+- [ ] 멀티플레이 시 2인 전용 vs 2~4인 지원
