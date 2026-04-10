@@ -10,6 +10,7 @@ import {
   needsDiscard,
   endTurn,
 } from '../game/gameLogic';
+import { executeAiTurn } from '../game/aiLogic';
 
 // 턴 내 진행 단계
 type TurnPhase = 'idle' | 'action' | 'discarding';
@@ -135,18 +136,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const next = endTurn(gameState);
     set({ gameState: next, turnPhase: 'idle', previousState: null, error: null });
 
-    // AI 턴이면 자동 실행 (aiLogic 구현 후 연결)
+    // AI 턴이면 자동 실행
     if (next.phase === 'playing' && next.players[next.currentPlayerIndex].id !== 'player-0') {
       setTimeout(() => {
         const { gameState: current } = get();
         if (!current || current.phase !== 'playing') return;
 
-        // TODO: aiLogic.ts에서 AI 액션 결정 후 실행
-        // const aiAction = decideAiAction(current);
-        // applyAiAction(aiAction);
-
-        // 임시: AI는 턴을 스킵 (패스) — aiLogic 구현 전까지
-        const afterAi = endTurn(current);
+        const afterAi = executeAiTurn(current);
         set({ gameState: afterAi, turnPhase: 'idle', previousState: null });
       }, 1000);
     }
