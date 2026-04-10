@@ -15,7 +15,8 @@
 - `src/types/game.ts` — 타입 정의 (Card, Noble, Player, GameState 등)
 - `src/game/cardData.ts` — 카드 데이터 (레벨1 40장, 레벨2 30장, 레벨3 20장, 귀족 10장)
 - `src/game/gameLogic.ts` — 게임 규칙 & 액션 로직 (초기화, 토큰/카드/예약, 귀족, 승리, 턴 관리)
-- `src/store/gameStore.ts` — Zustand 스토어 (상태 관리, 턴 흐름, 액션 취소, AI 턴 구조)
+- `src/game/aiLogic.ts` — Greedy AI (카드 구매 우선, 토큰 수집, 자동 버리기)
+- `src/store/gameStore.ts` — Zustand 스토어 (상태 관리, 턴 흐름, 액션 취소, AI 턴 연결)
 - `src/utils/gemColors.ts` — 보석 색상 상수
 - `src/components/Board/` — Board, CardRow, CardSlot, NobleRow, TokenPool
 - `src/components/Player/PlayerPanel.tsx` — 플레이어 패널 (토큰, 구매 카드, 예약 카드, 귀족)
@@ -34,7 +35,7 @@ src/
 ├── game/
 │   ├── cardData.ts            ✅
 │   ├── gameLogic.ts           ✅
-│   └── aiLogic.ts             🔲 AI 턴 처리
+│   └── aiLogic.ts             ✅
 ├── store/
 │   └── gameStore.ts           ✅
 ├── utils/
@@ -76,7 +77,7 @@ src/
 - `previousState`로 액션 취소 지원
 - 모든 액션에 `turnPhase !== 'idle'` 가드
 - `confirmTurn`에 `turnPhase !== 'action'` 가드 (버리기 강제)
-- AI 턴: setTimeout(1초) 후 실행 구조 (TODO: aiLogic 연결)
+- AI 턴: setTimeout(1초) 후 `executeAiTurn` 실행
 
 ---
 
@@ -96,7 +97,7 @@ src/
 │    [⚪] [⚫] [🔴] [🔵] [🟢] [★]         │
 +──────────────────────────────────────────+
 │                 내 패널                   │
-│  토큰 | 구매 카드(미니) | 예약 | 귀족     │
+│  토큰(N/10) | 보너스 | 구매 카드 | 예약 | 귀족 │
 +──────────────────────────────────────────+
 ```
 
@@ -111,13 +112,15 @@ src/
 
 ---
 
-## Phase 4: AI 로직 — 🔲 다음 작업
+## Phase 4: AI 로직 — ✅ 완료
 
-`src/game/aiLogic.ts` 구현 필요:
-1. 구매 가능한 카드 중 점수 가장 높은 카드 구매
-2. 구매 가능한 카드 없으면 → 가장 저렴한 카드 기준으로 부족한 토큰 수집
-3. 예약은 거의 안 함 (단순화)
-4. gameStore.ts의 AI 턴 TODO에 연결
+`src/game/aiLogic.ts`에 구현 완료:
+- `executeAiTurn` — AI 턴 전체 실행 (액션 → 버리기 → endTurn)
+- 전략 1: 구매 가능한 카드 중 점수 최고 구매 (동점이면 비용 저렴한 것)
+- 전략 2: deficit 가장 적은 카드 기준으로 부족한 토큰 수집 (선호 색 + 나머지로 3개 채움)
+- 폴백: 아무 토큰이나 최대한 수집
+- 10개 초과 시 자동 버리기 (가장 많이 보유한 색부터)
+- `gameStore.ts`에서 AI 턴 시 `executeAiTurn` 호출로 연결
 
 ---
 
@@ -147,5 +150,5 @@ src/
 3. ~~기본 UI: Board, CardSlot, PlayerPanel~~ ✅
 4. ~~인터랙션 (모달, 토큰 선택)~~ ✅
 5. ~~레이아웃 개선~~ ✅
-6. `aiLogic.ts` ← 다음
-7. 스타일링 / 폴리싱
+6. ~~`aiLogic.ts`~~ ✅
+7. 스타일링 / 폴리싱 ← 다음
