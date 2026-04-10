@@ -1,5 +1,4 @@
 import type { Card, GameState, GemColor, GemMap } from '../types/game';
-import { emptyGemMap } from '../types/game';
 import {
   getPlayerBonuses,
   canAffordCard,
@@ -11,6 +10,11 @@ import {
 } from './gameLogic';
 
 const GEM_COLORS: GemColor[] = ['white', 'blue', 'green', 'red', 'black'];
+
+export interface AiTurnResult {
+  state: GameState;
+  logs: string[];
+}
 
 /** AI가 카드를 구매하기 위해 부족한 토큰 수 계산 (적을수록 구매에 가까움) */
 function getDeficit(player: { tokens: GameState['players'][0]['tokens']; cards: Card[] }, card: Card): number {
@@ -34,80 +38,97 @@ function getAllAvailableCards(state: GameState): Card[] {
   ];
 }
 
-/** AI 턴 실행: 액션 수행 → endTurn까지 처리한 GameState 반환 */
-export function executeAiTurn(state: GameState): GameState {
+import { describeTokens } from '../utils/gemColors';
+
+/** AI 턴 실행: 액션 수행 → endTurn까지 처리한 결과 + 로그 반환 */
+export function executeAiTurn(state: GameState): AiTurnResult {
   const player = state.players[state.currentPlayerIndex];
-  let next = state;
+  const playerIndex = state.currentPlayerIndex;
+  const logs: string[] = [];
+  let afterAction = state;
 
   // ─── 전략 1: 구매 가능한 카드 중 최고 점수 카드 구매 ───
   const affordableCards = getAllAvailableCards(state)
     .filter(card => canAffordCard(player, card));
 
   if (affordableCards.length > 0) {
-    // 점수 높은 순, 동점이면 비용 합계 낮은 순
     affordableCards.sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points;
       const costA = GEM_COLORS.reduce((s, c) => s + a.cost[c], 0);
       const costB = GEM_COLORS.reduce((s, c) => s + b.cost[c], 0);
       return costA - costB;
     });
-    next = purchaseCard(state, affordableCards[0].id);
-    return endTurn(next);
-  }
+    const card = affordableCards[0];
+    afterAction = purchaseCard(state, card.id);
+    logs.push(`${player.name}이(가) ${card.color} 카드를 구매했습니다${card.points > 0 ? ` (${card.points}점)` : ''}`);
+  } else {
+    // ─── 전략 2: 가장 가까운 카드 기준으로 토큰 수집 ────────
+    let tokensTaken = false;
+    const allCards = getAllAvailableCards(state);
 
-  // ─── 전략 2: 가장 가까운 카드 기준으로 토큰 수집 ────────
-  const allCards = getAllAvailableCards(state);
-  if (allCards.length > 0) {
-    // deficit이 적은 순으로 정렬 (곧 살 수 있는 카드 우선)
-    const targets = allCards
-      .map(card => ({ card, deficit: getDeficit(player, card) }))
-      .sort((a, b) => a.deficit - b.deficit);
+    if (allCards.length > 0) {
+      const targets = allCards
+        .map(card => ({ card, deficit: getDeficit(player, card) }))
+        .sort((a, b) => a.deficit - b.deficit);
 
-    const target = targets[0].card;
-    const bonuses = getPlayerBonuses(player);
+      const target = targets[0].card;
+      const bonuses = getPlayerBonuses(player);
 
-    // 타겟 카드에 부족한 색상 파악
-    const neededColors: GemColor[] = [];
-    for (const color of GEM_COLORS) {
-      const need = target.cost[color] - bonuses[color] - player.tokens[color];
-      if (need > 0 && state.tokens[color] > 0) {
-        neededColors.push(color);
-      }
-    }
-
-    const tokenSelection = pickTokens(neededColors, state);
-
-    if (tokenSelection) {
-      try {
-        next = takeTokens(state, tokenSelection);
-        // 10개 초과 시 자동 버리기
-        if (getTotalTokenCount(next.players[next.currentPlayerIndex]) > 10) {
-          next = autoDiscard(next);
+      const neededColors: GemColor[] = [];
+      for (const color of GEM_COLORS) {
+        const need = target.cost[color] - bonuses[color] - player.tokens[color];
+        if (need > 0 && state.tokens[color] > 0) {
+          neededColors.push(color);
         }
-        return endTurn(next);
-      } catch {
-        // 토큰 선택 실패 시 아래 폴백으로
+      }
+
+      const tokenSelection = pickTokens(neededColors, state);
+      if (tokenSelection) {
+        try {
+          afterAction = takeTokens(state, tokenSelection);
+          if (getTotalTokenCount(afterAction.players[afterAction.currentPlayerIndex]) > 10) {
+            afterAction = autoDiscard(afterAction);
+          }
+          logs.push(`${player.name}이(가) ${describeTokens(tokenSelection)} 토큰을 가져왔습니다`);
+          tokensTaken = true;
+        } catch { /* 폴백으로 */ }
+      }
+    }
+
+    // ─── 폴백: 가용 토큰 중 아무거나 가져가기 ─────────────
+    if (!tokensTaken) {
+      const availableColors = GEM_COLORS.filter(c => state.tokens[c] > 0);
+      const fallback = pickTokens(availableColors, state);
+      if (fallback) {
+        try {
+          afterAction = takeTokens(state, fallback);
+          if (getTotalTokenCount(afterAction.players[afterAction.currentPlayerIndex]) > 10) {
+            afterAction = autoDiscard(afterAction);
+          }
+          logs.push(`${player.name}이(가) ${describeTokens(fallback)} 토큰을 가져왔습니다`);
+        } catch { /* 턴 넘김 */ }
       }
     }
   }
 
-  // ─── 폴백: 가용 토큰 중 아무거나 가져가기 ─────────────
-  const availableColors = GEM_COLORS.filter(c => state.tokens[c] > 0);
-  const fallback = pickTokens(availableColors, state);
+  // endTurn (귀족 + 승리 체크 + 턴 넘김)
+  const afterEnd = endTurn(afterAction);
 
-  if (fallback) {
-    try {
-      next = takeTokens(state, fallback);
-      if (getTotalTokenCount(next.players[next.currentPlayerIndex]) > 10) {
-        next = autoDiscard(next);
-      }
-      return endTurn(next);
-    } catch {
-      // 토큰도 못 가져가면 그냥 턴 넘김
+  // 귀족 획득 감지
+  const noblesBefore = afterAction.players[playerIndex].nobles.length;
+  const noblesAfter = afterEnd.players[playerIndex].nobles.length;
+  if (noblesAfter > noblesBefore) {
+    const earned = afterEnd.players[playerIndex].nobles.slice(noblesBefore);
+    for (const n of earned) {
+      logs.push(`${player.name}이(가) 귀족을 획득했습니다 (+${n.points}점)`);
     }
   }
 
-  return endTurn(state);
+  if (afterEnd.phase === 'ended' && afterEnd.winner) {
+    logs.push(`게임 종료! ${afterEnd.winner.name} 승리`);
+  }
+
+  return { state: afterEnd, logs };
 }
 
 /** 토큰 선택: 다른 색 최대 3개 or 같은 색 2개 */

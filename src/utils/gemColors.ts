@@ -14,3 +14,11 @@ export const TOKEN_STYLE: Record<TokenColor, { bg: string; text: string }> = {
 };
 
 export const GEM_COLORS: GemColor[] = ['white', 'black', 'red', 'blue', 'green'];
+
+/** 토큰 선택을 읽기 쉬운 문자열로 변환 (예: "white, blue x2") */
+export function describeTokens(tokens: Partial<Record<GemColor, number>>): string {
+  return Object.entries(tokens)
+    .filter(([, n]) => (n ?? 0) > 0)
+    .map(([color, n]) => n! > 1 ? `${color} x${n}` : color)
+    .join(', ');
+}
