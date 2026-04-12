@@ -1,15 +1,16 @@
 # Splendor Online - 구현 계획
 
 ## 프로젝트 목표
-- **1차 스콥**: 싱글플레이 (플레이어 1명 vs AI 1명) — ✅ 완료
-- **2차 스콥**: 실시간 멀티플레이 (WebSocket 기반) — 🔲 다음
+- **1차 스콥**: 싱글플레이 (플레이어 1명 vs AI) — ✅ 완료
+- **2차 스콥**: 실시간 멀티플레이 (WebSocket 기반) — ✅ 완료
 - **3차 스콥**: 일러스트 / 비주얼 폴리싱
 
 ## 기술 스택
 - React + TypeScript + Vite
 - 상태관리: Zustand
 - 스타일링: CSS (App.css 단일 파일)
-- 멀티플레이: WebSocket (예정)
+- 멀티플레이: Socket.IO
+- 배포: Railway
 
 ---
 
@@ -54,44 +55,39 @@ src/
 
 ---
 
-## 2차 스콥: 실시간 멀티플레이 — 🔲 다음 작업
+## 2차 스콥: 실시간 멀티플레이 — ✅ 완료
 
-### 왜 일러스트보다 멀티플레이가 먼저인가?
-- 멀티플레이는 게임 구조를 바꿈 (서버/클라이언트 분리, 상태 동기화)
-- 구조 변경 후 일러스트를 입히면 이중 작업 없음
-- 일러스트는 CSS/이미지 교체만으로 가능해서 마지막에 하는 게 효율적
-- gameLogic이 순수 함수로 잘 분리돼 있어 서버로 옮기기 좋은 상태
+### 구현 내용
 
-### 구현 방향 (검토 필요)
+**서버 (server/)**
+- Socket.IO 서버 (`server/index.ts`) — 프로덕션에서 정적 파일 서빙 포함
+- 방 관리 (`server/RoomManager.ts`) — 4자리 초대 코드, 생성/참가/레디/시작
+- 게임 룸 (`server/GameRoom.ts`) — 서버 권위적 gameLogic 실행, 상태 브로드캐스트
 
-**서버 측:**
-- WebSocket 서버 (Node.js + ws 또는 Socket.IO)
-- 방 생성 / 참가 / 매칭
-- gameLogic을 서버에서 실행 (게임 상태는 서버가 관리)
-- 클라이언트에게 상태 브로드캐스트
+**프로토콜 (src/protocol.ts)**
+- Client → Server: room:create, room:join, room:ready, room:start, game:* 액션
+- Server → Client: room:created, room:updated, game:state, turn:timer, player:*
 
-**클라이언트 측:**
-- WebSocket 연결
-- 서버에 액션 전송 (토큰 선택, 카드 구매 등)
-- 서버로부터 상태 수신 → UI 업데이트
-- 상대 턴 대기 UI
+**클라이언트**
+- `src/hooks/useSocket.ts` — Socket.IO 싱글턴 연결
+- `src/store/multiplayerStore.ts` — 소켓 기반 로비/게임 상태 관리
+- `src/components/Lobby.tsx` — 방 코드 표시, 플레이어 목록, 레디/시작
+- `src/components/Game.tsx` — useGameActions 훅으로 싱글/멀티 스토어 선택
+- `src/App.tsx` — 모드 선택 (싱글/멀티), 로비 → 게임 라우팅
 
-**고려할 점:**
-- [ ] 서버 기술 선택: Node.js ws / Socket.IO / 기타
-- [ ] 배포 환경: Vercel + 별도 WS 서버 / Railway / Fly.io 등
-- [ ] 방 시스템: 초대 코드 방식 vs 랜덤 매칭
-- [ ] 기존 싱글플레이 (vs AI) 유지 여부
-- [ ] 2인 전용 vs 2~4인 지원
-- [ ] 재접속 / 연결 끊김 처리
-- [ ] gameLogic.ts를 서버/클라이언트 공유 (모노레포 또는 공통 패키지)
+**주요 기능**
+- 2~4인 실시간 대전 (서버 권위적, optimistic update 없음)
+- 인원별 레이아웃: 2인 세로, 3인 상+좌, 4인 상+좌+우 (CSS Grid)
+- 턴 타임아웃: 끊긴 플레이어 60초 카운트다운
+  - 2인: 타임아웃 시 즉시 게임 종료 (남은 플레이어 승리)
+  - 3~4인: 턴 스킵 → 3회 연속 스킵 시 퇴장
+- 카드 구매/예약 시 덱 보충을 턴 확정까지 지연 (치팅 방지)
+- 기존 싱글플레이(vs AI) 모드 완전 유지
 
-### 작업 순서 (예상)
-1. 서버 프로젝트 세팅 + WebSocket 기본 연결
-2. 방 생성 / 참가 흐름
-3. gameLogic을 서버에서 실행하도록 이동
-4. 클라이언트 → 서버 액션 전송 / 서버 → 클라이언트 상태 수신
-5. 상대 턴 대기 UI + 턴 타이머 (선택)
-6. 배포
+**배포**
+- Railway (https://splendor-online-production.up.railway.app)
+- `npm run build` → Vite 프로덕션 빌드
+- `npm start` → Node.js 서버 (정적 파일 + WebSocket)
 
 ---
 
@@ -122,11 +118,8 @@ src/
 - [x] 보석 색상 순서: white → black → red → blue → green
 - [x] 게임 로그: 스토어에 기록 (UI 노출은 나중에)
 - [x] 작업 순서: 멀티플레이 → 일러스트 (구조 변경 먼저, 비주얼은 마지막)
-
-## 미결 결정 사항
-- [ ] 게임 로그 UI 패널 추가 여부
-- [ ] 덱에서 예약 시 카드 앞면/뒷면 표시
-- [ ] 멀티플레이 서버 기술 선택
-- [ ] 배포 환경
-- [ ] 방 시스템 방식 (초대 코드 vs 랜덤 매칭)
-- [ ] 멀티플레이 시 2인 전용 vs 2~4인 지원
+- [x] 멀티플레이 서버: Socket.IO
+- [x] 방 시스템: 4자리 초대 코드
+- [x] 플레이어 수: 2~4인
+- [x] 싱글플레이 유지: 시작 화면에서 모드 선택
+- [x] 배포: Railway
