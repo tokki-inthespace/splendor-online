@@ -102,7 +102,7 @@ export class GameRoom {
   private findCard(cardId: string): Card | undefined {
     if (!this.gameState) return undefined;
     for (const level of [1, 2, 3] as const) {
-      const found = this.gameState.visibleCards[level].find(c => c.id === cardId);
+      const found = this.gameState.visibleCards[level].find(c => c?.id === cardId);
       if (found) return found;
     }
     const currentPlayer = this.gameState.players[this.gameState.currentPlayerIndex];

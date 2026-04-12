@@ -3,7 +3,7 @@ import { CardSlot } from './CardSlot';
 
 interface Props {
   level: 1 | 2 | 3;
-  cards: Card[];
+  cards: (Card | null)[];
   deckCount: number;
   onCardClick?: (card: Card) => void;
   onDeckClick?: () => void;
@@ -24,17 +24,21 @@ export function CardRow({ level, cards, deckCount, onCardClick, onDeckClick, dis
         <span className="deck-level">{LEVEL_LABEL[level]}</span>
         <span className="deck-count">{deckCount}</span>
       </div>
-      {cards.map(card => (
-        <CardSlot
-          key={card.id}
-          card={card}
-          onClick={() => onCardClick?.(card)}
-          disabled={disabled}
-        />
-      ))}
+      {cards.map((card, i) =>
+        card ? (
+          <CardSlot
+            key={card.id}
+            card={card}
+            onClick={() => onCardClick?.(card)}
+            disabled={disabled}
+          />
+        ) : (
+          <div key={`empty-${i}`} className="card-slot empty" />
+        )
+      )}
       {/* 빈 슬롯 채우기 (항상 4칸 유지) */}
       {Array.from({ length: 4 - cards.length }).map((_, i) => (
-        <div key={`empty-${i}`} className="card-slot empty" />
+        <div key={`tail-${i}`} className="card-slot empty" />
       ))}
     </div>
   );

@@ -55,7 +55,7 @@ import { describeTokens } from '../utils/gemColors';
 
 function findCard(state: GameState, cardId: string): Card | undefined {
   for (const level of [1, 2, 3] as const) {
-    const found = state.visibleCards[level].find(c => c.id === cardId);
+    const found = state.visibleCards[level].find(c => c?.id === cardId);
     if (found) return found;
   }
   return state.players[state.currentPlayerIndex].reservedCards.find(c => c.id === cardId);

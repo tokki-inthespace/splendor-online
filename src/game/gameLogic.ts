@@ -82,24 +82,29 @@ function updatePlayer(state: GameState, player: Player): Player[] {
   );
 }
 
-/** 공개 카드 한 장을 제거 (덱 보충 없이) */
+/** 공개 카드 한 장을 null로 교체 (위치 유지, 덱 보충은 턴 종료 시) */
 function removeVisibleCard(
-  visibleCards: Record<1 | 2 | 3, Card[]>,
+  visibleCards: Record<1 | 2 | 3, (Card | null)[]>,
   level: 1 | 2 | 3,
   removedCardId: string,
-): Record<1 | 2 | 3, Card[]> {
-  return { ...visibleCards, [level]: visibleCards[level].filter(c => c.id !== removedCardId) };
+): Record<1 | 2 | 3, (Card | null)[]> {
+  return { ...visibleCards, [level]: visibleCards[level].map(c => c?.id === removedCardId ? null : c) };
 }
 
-/** 모든 레벨의 빈 슬롯을 덱에서 보충 (턴 종료 시 호출) */
+/** 모든 레벨의 null 슬롯을 덱에서 보충 (턴 종료 시 호출) */
 export function refillVisibleCards(state: GameState): GameState {
-  const newVisibleCards: Record<1 | 2 | 3, Card[]> = { 1: [...state.visibleCards[1]], 2: [...state.visibleCards[2]], 3: [...state.visibleCards[3]] };
+  const newVisibleCards: Record<1 | 2 | 3, (Card | null)[]> = { 1: [...state.visibleCards[1]], 2: [...state.visibleCards[2]], 3: [...state.visibleCards[3]] };
   const newDeck: Record<1 | 2 | 3, Card[]> = { 1: [...state.deck[1]], 2: [...state.deck[2]], 3: [...state.deck[3]] };
 
   for (const level of [1, 2, 3] as const) {
-    while (newVisibleCards[level].length < 4 && newDeck[level].length > 0) {
-      newVisibleCards[level].push(newDeck[level].shift()!);
+    // null 슬롯을 덱에서 보충 (원래 위치 유지)
+    for (let i = 0; i < newVisibleCards[level].length; i++) {
+      if (newVisibleCards[level][i] === null && newDeck[level].length > 0) {
+        newVisibleCards[level][i] = newDeck[level].shift()!;
+      }
     }
+    // 남은 null 제거 (덱이 비어서 채우지 못한 경우)
+    newVisibleCards[level] = newVisibleCards[level].filter(c => c !== null);
   }
 
   return { ...state, visibleCards: newVisibleCards, deck: newDeck };
@@ -201,7 +206,7 @@ export function purchaseCard(state: GameState, cardId: string): GameState {
   let sourceLevel: 1 | 2 | 3 = 1;
 
   for (const level of [1, 2, 3] as const) {
-    const found = state.visibleCards[level].find(c => c.id === cardId);
+    const found = state.visibleCards[level].find(c => c?.id === cardId);
     if (found) { card = found; sourceLevel = level; break; }
   }
   if (!card) {
@@ -251,7 +256,7 @@ export function reserveCard(state: GameState, cardId: string): GameState {
   let card: Card | undefined;
   let sourceLevel: 1 | 2 | 3 = 1;
   for (const level of [1, 2, 3] as const) {
-    const found = state.visibleCards[level].find(c => c.id === cardId);
+    const found = state.visibleCards[level].find(c => c?.id === cardId);
     if (found) { card = found; sourceLevel = level; break; }
   }
   if (!card) throw new Error('카드를 찾을 수 없습니다');
