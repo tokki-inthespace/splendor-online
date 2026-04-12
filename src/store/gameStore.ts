@@ -42,6 +42,9 @@ interface GameStore {
   // 턴 확정
   confirmTurn: () => void;
 
+  // 게임 리셋 (시작 화면으로)
+  resetGame: () => void;
+
   // 에러 클리어
   clearError: () => void;
 }
@@ -212,6 +215,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }, 1000);
     }
   },
+
+  resetGame: () => set({ gameState: null, turnPhase: 'idle', previousState: null, error: null, logs: [], previousLogs: null }),
 
   clearError: () => set({ error: null }),
 }));

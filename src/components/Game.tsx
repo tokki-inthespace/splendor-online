@@ -13,6 +13,7 @@ export function Game() {
     gameState, turnPhase, error,
     doTakeTokens, doPurchaseCard, doReserveCard, doReserveCardFromDeck,
     doDiscardTokens, undoAction, confirmTurn, clearError,
+    startGame, resetGame,
   } = useGameStore();
 
   const [uiMode, setUIMode] = useState<UIMode>('idle');
@@ -120,8 +121,19 @@ export function Game() {
       const maxForColor = myPlayer.tokens[color];
       if (amount < maxForColor) {
         current[color] = amount + 1;
-      } else {
-        delete current[color];
+      }
+      return current;
+    });
+  };
+
+  const handleDiscardTokenRightClick = (e: React.MouseEvent, color: GemColor | 'gold') => {
+    e.preventDefault();
+    setDiscardSelection(prev => {
+      const current = { ...prev };
+      const amount = current[color] ?? 0;
+      if (amount > 0) {
+        current[color] = amount - 1;
+        if (current[color] === 0) delete current[color];
       }
       return current;
     });
@@ -243,7 +255,12 @@ export function Game() {
                 if (myPlayer.tokens[color] === 0) return null;
                 const selected = discardSelection[color] ?? 0;
                 return (
-                  <div key={color} className="discard-item" onClick={() => handleDiscardTokenClick(color)}>
+                  <div
+                    key={color}
+                    className="discard-item"
+                    onClick={() => handleDiscardTokenClick(color)}
+                    onContextMenu={(e) => handleDiscardTokenRightClick(e, color)}
+                  >
                     <span className="token-circle small" style={{ backgroundColor: TOKEN_STYLE[color].bg, color: TOKEN_STYLE[color].text }}>
                       {myPlayer.tokens[color]}
                     </span>
@@ -252,13 +269,19 @@ export function Game() {
                 );
               })}
             </div>
-            <button
-              className="btn btn-confirm"
-              onClick={handleConfirmDiscard}
-              disabled={totalDiscarding !== tokensToDiscard}
-            >
-              확인 ({totalDiscarding}/{tokensToDiscard})
-            </button>
+            <p className="discard-hint">클릭: 선택 / 우클릭: 취소</p>
+            <div className="modal-actions">
+              <button
+                className="btn btn-confirm"
+                onClick={handleConfirmDiscard}
+                disabled={totalDiscarding !== tokensToDiscard}
+              >
+                확인 ({totalDiscarding}/{tokensToDiscard})
+              </button>
+              <button className="btn btn-cancel" onClick={() => setDiscardSelection({})}>
+                초기화
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -288,6 +311,14 @@ export function Game() {
               최종 점수: {gameState.players.map(p =>
                 `${p.name} ${p.cards.reduce((s, c) => s + c.points, 0) + p.nobles.reduce((s, n) => s + n.points, 0)}점`
               ).join(' / ')}
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-confirm" onClick={() => startGame(myPlayer.name)}>
+                다시하기
+              </button>
+              <button className="btn btn-cancel" onClick={resetGame}>
+                처음으로
+              </button>
             </div>
           </div>
         </div>
