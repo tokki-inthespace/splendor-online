@@ -64,6 +64,7 @@ export interface ServerEvents {
     turnPhase: TurnPhase;
     myPlayerIndex: number;
     logs: string[];
+    spectators: string[];
   }) => void;
   'game:error': (payload: { message: string }) => void;
   'player:disconnected': (payload: { playerName: string; playerIndex: number }) => void;

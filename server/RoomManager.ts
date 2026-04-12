@@ -484,6 +484,8 @@ export class RoomManager {
     // 기존 턴 타이머 정리
     this.clearTurnTimer(roomCode);
 
+    const spectatorNames = room.spectators.map(s => s.name);
+
     // 상태 브로드캐스트 (플레이어)
     for (const p of room.players) {
       this.io.to(p.socketId).emit('game:state', {
@@ -491,6 +493,7 @@ export class RoomManager {
         turnPhase: room.turnPhase,
         myPlayerIndex: p.playerIndex,
         logs: room.logs,
+        spectators: spectatorNames,
       });
     }
 
@@ -501,6 +504,7 @@ export class RoomManager {
         turnPhase: room.turnPhase,
         myPlayerIndex: -1,
         logs: room.logs,
+        spectators: spectatorNames,
       });
     }
 

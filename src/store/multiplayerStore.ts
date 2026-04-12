@@ -191,8 +191,13 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       set({ lobbyError: message });
     });
 
-    socket.on('game:state', ({ gameState, turnPhase, myPlayerIndex, logs }) => {
+    socket.on('game:state', ({ gameState, turnPhase, myPlayerIndex, logs, spectators }) => {
       set({ gameState, turnPhase, myPlayerIndex, logs, error: null, turnTimer: null });
+      // roomInfo의 spectators도 최신으로 갱신
+      const { roomInfo } = get();
+      if (roomInfo) {
+        set({ roomInfo: { ...roomInfo, spectators } });
+      }
     });
 
     socket.on('game:error', ({ message }) => {
