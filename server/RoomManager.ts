@@ -52,8 +52,13 @@ export class RoomManager {
           // 턴 타이머 정리
           this.clearTurnTimer(code);
 
-          // 방에 남은 플레이어들에게 소켓 정리
+          // 방에 남은 플레이어들의 disconnect 타이머 + 소켓 정리
           for (const p of room.players) {
+            const dt = this.disconnectTimers.get(p.socketId);
+            if (dt) {
+              clearTimeout(dt);
+              this.disconnectTimers.delete(p.socketId);
+            }
             const s = this.io.sockets.sockets.get(p.socketId);
             if (s) {
               s.leave(this.socketRoom(code));
@@ -268,11 +273,11 @@ export class RoomManager {
   }
 
   private handleGameAction(socket: IOSocket, action: (room: GameRoom) => string | null): void {
-    const { roomCode } = socket.data ?? {};
-    if (!roomCode) return;
+    const { roomCode, playerIndex } = socket.data ?? {};
+    if (!roomCode || playerIndex === undefined || playerIndex === null) return;
 
     const room = this.rooms.get(roomCode);
-    if (!room || !room.gameState) return;
+    if (!room || !room.gameState || room.status !== 'playing') return;
 
     const error = action(room);
     if (error) {
