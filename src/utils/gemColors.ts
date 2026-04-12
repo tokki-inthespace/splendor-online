@@ -13,7 +13,7 @@ export const TOKEN_STYLE: Record<TokenColor, { bg: string; text: string }> = {
   gold: { bg: '#FFC107', text: '#333' },
 };
 
-export const GEM_COLORS: GemColor[] = ['white', 'black', 'red', 'blue', 'green'];
+export const GEM_COLORS: GemColor[] = ['white', 'blue', 'green', 'red', 'black'];
 
 /** 토큰 선택을 읽기 쉬운 문자열로 변환 (예: "white, blue x2") */
 export function describeTokens(tokens: Partial<Record<GemColor, number>>): string {
