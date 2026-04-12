@@ -113,6 +113,8 @@ export class RoomManager {
     socket.on('room:ready', ({ ready }) => this.handleReady(socket, ready));
     socket.on('room:start', () => this.handleStart(socket));
     socket.on('room:leave', () => this.handleLeave(socket));
+    socket.on('room:switch_to_spectator', () => this.handleSwitchToSpectator(socket));
+    socket.on('room:switch_to_player', () => this.handleSwitchToPlayer(socket));
     socket.on('disconnect', () => this.handleDisconnect(socket));
 
     // 게임 액션 이벤트
@@ -265,6 +267,63 @@ export class RoomManager {
 
     this.io.to(this.socketRoom(roomCode)).emit('room:updated', { room: room.toRoomInfo() });
     console.log(`[관전 참가] ${roomCode} — ${playerName}`);
+  }
+
+  private handleSwitchToSpectator(socket: IOSocket): void {
+    const { roomCode } = socket.data ?? {};
+    if (!roomCode) return;
+
+    const room = this.rooms.get(roomCode);
+    if (!room || room.status !== 'waiting') return;
+
+    const player = room.getPlayerBySocketId(socket.id);
+    if (!player) return;
+
+    // 호스트는 관전자로 전환 불가
+    if (player.playerIndex === room.hostIndex) {
+      socket.emit('room:error', { message: '호스트는 관전자로 전환할 수 없습니다' });
+      return;
+    }
+
+    // 플레이어 → 관전자 전환
+    room.removePlayer(socket.id);
+    room.addSpectator(player.name, socket.id);
+    socket.data = { roomCode, playerIndex: -1 };
+
+    // 남은 플레이어들의 playerIndex 업데이트
+    for (const p of room.players) {
+      const s = this.io.sockets.sockets.get(p.socketId);
+      if (s) s.data.playerIndex = p.playerIndex;
+    }
+
+    this.io.to(this.socketRoom(roomCode)).emit('room:updated', { room: room.toRoomInfo() });
+    console.log(`[관전 전환] ${roomCode} — ${player.name}`);
+  }
+
+  private handleSwitchToPlayer(socket: IOSocket): void {
+    const { roomCode } = socket.data ?? {};
+    if (!roomCode) return;
+
+    const room = this.rooms.get(roomCode);
+    if (!room || room.status !== 'waiting') return;
+
+    const spectator = room.getSpectatorBySocketId(socket.id);
+    if (!spectator) return;
+
+    if (room.players.length >= 4) {
+      socket.emit('room:error', { message: '방이 가득 찼습니다 (최대 4명)' });
+      return;
+    }
+
+    // 관전자 → 플레이어 전환
+    room.removeSpectator(socket.id);
+    const session = room.addPlayer(spectator.name, socket.id);
+    socket.data = { roomCode, playerIndex: session.playerIndex };
+
+    // 전환된 플레이어에게 myPlayerIndex 전달
+    socket.emit('room:joined', { room: room.toRoomInfo(), myPlayerIndex: session.playerIndex, sessionId: session.sessionId });
+    this.io.to(this.socketRoom(roomCode)).emit('room:updated', { room: room.toRoomInfo() });
+    console.log(`[참가 전환] ${roomCode} — ${spectator.name}`);
   }
 
   private handleReady(socket: IOSocket, ready: boolean): void {

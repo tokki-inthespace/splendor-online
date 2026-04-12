@@ -401,7 +401,7 @@ export class GameRoom {
         isHost: p.playerIndex === this.hostIndex,
         connected: p.connected,
       })),
-      spectatorCount: this.spectators.length,
+      spectators: this.spectators.map(s => s.name),
     };
   }
 

@@ -49,6 +49,7 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
       logs: mp.logs,
       myPlayerIndex: mp.myPlayerIndex ?? -1,
       isSpectator: mp.isSpectator,
+      spectators: mp.roomInfo?.spectators ?? [],
       turnTimer: mp.turnTimer,
       doTakeTokens: mp.doTakeTokens,
       doPurchaseCard: mp.doPurchaseCard,
@@ -70,6 +71,7 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
     logs: sp.logs,
     myPlayerIndex: 0,
     isSpectator: false,
+    spectators: [] as string[],
     turnTimer: null as { remainingSeconds: number; playerName: string; playerIndex: number } | null,
     doTakeTokens: sp.doTakeTokens,
     doPurchaseCard: sp.doPurchaseCard,
@@ -86,7 +88,7 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
 
 export function Game({ mode }: GameProps) {
   const {
-    gameState, turnPhase, error, myPlayerIndex, isSpectator, turnTimer,
+    gameState, turnPhase, error, myPlayerIndex, isSpectator, spectators, turnTimer,
     doTakeTokens, doPurchaseCard, doReserveCard, doReserveCardFromDeck,
     doDiscardTokens, undoAction, confirmTurn, clearError,
     startGame, resetGame,
@@ -297,6 +299,16 @@ export function Game({ mode }: GameProps) {
 
   return (
     <div className={`game ${layoutClass}`}>
+      {/* 관전자 리스트 */}
+      {mode === 'multiplayer' && spectators.length > 0 && (
+        <div className="spectator-list">
+          <span className="spectator-list-label">관전</span>
+          {spectators.map((name, i) => (
+            <span key={i} className="spectator-list-name">{name}</span>
+          ))}
+        </div>
+      )}
+
       {/* 2인: 기존 레이아웃 */}
       {playerCount <= 2 && !isSpectator && (
         <>

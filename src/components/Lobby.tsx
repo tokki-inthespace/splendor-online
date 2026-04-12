@@ -6,9 +6,9 @@ interface LobbyProps {
 
 export function Lobby({ onLeave }: LobbyProps) {
   const {
-    roomCode, roomInfo, lobbyError, myPlayerIndex,
+    roomCode, roomInfo, lobbyError, myPlayerIndex, isSpectator,
     gameState,
-    setReady, startGame, leaveRoom, clearLobbyError,
+    setReady, startGame, leaveRoom, switchToSpectator, switchToPlayer, clearLobbyError,
   } = useMultiplayerStore();
 
   // 게임이 시작되면 이 컴포넌트는 더 이상 렌더링되지 않아야 함
@@ -62,6 +62,18 @@ export function Lobby({ onLeave }: LobbyProps) {
         ))}
       </div>
 
+      {roomInfo.spectators.length > 0 && (
+        <div className="lobby-players lobby-spectators">
+          <p className="lobby-section-title">관전자 ({roomInfo.spectators.length})</p>
+          {roomInfo.spectators.map((name, i) => (
+            <div key={i} className="lobby-player spectator">
+              <span className="lobby-player-name">{name}</span>
+              <span className="lobby-player-status spectator">관전</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {lobbyError && (
         <div className="lobby-error" onClick={clearLobbyError}>
           {lobbyError}
@@ -69,26 +81,38 @@ export function Lobby({ onLeave }: LobbyProps) {
       )}
 
       <div className="lobby-actions">
-        {!isHost && (
-          <button
-            className={`btn ${isReady ? 'btn-cancel' : 'btn-confirm'}`}
-            onClick={() => setReady(!isReady)}
-          >
-            {isReady ? '준비 취소' : '준비'}
-          </button>
+        {isSpectator ? (
+          <>
+            <button className="btn btn-confirm" onClick={switchToPlayer}>참가하기</button>
+            <button className="btn btn-cancel" onClick={handleLeave}>나가기</button>
+          </>
+        ) : (
+          <>
+            {!isHost && (
+              <>
+                <button
+                  className={`btn ${isReady ? 'btn-cancel' : 'btn-confirm'}`}
+                  onClick={() => setReady(!isReady)}
+                >
+                  {isReady ? '준비 취소' : '준비'}
+                </button>
+                <button className="btn btn-reserve" onClick={switchToSpectator}>
+                  관전하기
+                </button>
+              </>
+            )}
+            {isHost && (
+              <button
+                className="btn btn-start"
+                onClick={startGame}
+                disabled={!allReady}
+              >
+                게임 시작 {!allReady && `(${roomInfo.players.length < 2 ? '최소 2명 필요' : '전원 준비 필요'})`}
+              </button>
+            )}
+            <button className="btn btn-cancel" onClick={handleLeave}>나가기</button>
+          </>
         )}
-        {isHost && (
-          <button
-            className="btn btn-start"
-            onClick={startGame}
-            disabled={!allReady}
-          >
-            게임 시작 {!allReady && `(${roomInfo.players.length < 2 ? '최소 2명 필요' : '전원 준비 필요'})`}
-          </button>
-        )}
-        <button className="btn btn-cancel" onClick={handleLeave}>
-          나가기
-        </button>
       </div>
     </div>
   );

@@ -14,8 +14,8 @@ export interface RoomPlayer {
 export interface RoomInfo {
   code: string;
   players: RoomPlayer[];
+  spectators: string[];  // 관전자 이름 목록
   status: 'waiting' | 'playing' | 'ended';
-  spectatorCount: number;
 }
 
 // ─── Client → Server 이벤트 ──────────────────────────────
@@ -25,6 +25,8 @@ export interface ClientEvents {
   'room:ready': (payload: { ready: boolean }) => void;
   'room:start': () => void;
   'room:leave': () => void;
+  'room:switch_to_spectator': () => void;
+  'room:switch_to_player': () => void;
   'game:takeTokens': (payload: { tokens: Partial<GemMap> }) => void;
   'game:purchaseCard': (payload: { cardId: string }) => void;
   'game:reserveCard': (payload: { cardId: string }) => void;

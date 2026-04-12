@@ -49,6 +49,8 @@ interface MultiplayerStore {
   setReady: (ready: boolean) => void;
   startGame: () => void;
   leaveRoom: () => void;
+  switchToSpectator: () => void;
+  switchToPlayer: () => void;
   clearLobbyError: () => void;
 
   // 게임 액션 (서버에 전송)
@@ -269,6 +271,16 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
 
   startGame: () => {
     getSocket().emit('room:start');
+  },
+
+  switchToSpectator: () => {
+    getSocket().emit('room:switch_to_spectator');
+    set({ isSpectator: true, myPlayerIndex: -1 });
+  },
+
+  switchToPlayer: () => {
+    getSocket().emit('room:switch_to_player');
+    set({ isSpectator: false });
   },
 
   leaveRoom: () => {
