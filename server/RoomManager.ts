@@ -25,8 +25,47 @@ export class RoomManager {
   private disconnectTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private turnTimers = new Map<string, TurnTimer>(); // roomCode -> timer
 
+  // 방 만료 시간 (ms)
+  private static readonly ENDED_ROOM_TTL = 5 * 60 * 1000;     // 종료된 방: 5분
+  private static readonly WAITING_ROOM_TTL = 30 * 60 * 1000;   // 대기 중 방: 30분
+  private static readonly PLAYING_ROOM_TTL = 15 * 60 * 1000;   // 진행 중 방: 15분
+  private static readonly GC_INTERVAL = 60 * 1000;             // GC 주기: 1분
+
   constructor(io: IOServer) {
     this.io = io;
+    this.startGarbageCollection();
+  }
+
+  private startGarbageCollection(): void {
+    setInterval(() => {
+      const now = Date.now();
+
+      for (const [code, room] of this.rooms) {
+        const elapsed = now - room.lastActivityAt;
+        let ttl: number;
+
+        if (room.status === 'ended') ttl = RoomManager.ENDED_ROOM_TTL;
+        else if (room.status === 'waiting') ttl = RoomManager.WAITING_ROOM_TTL;
+        else ttl = RoomManager.PLAYING_ROOM_TTL;
+
+        if (elapsed > ttl) {
+          // 턴 타이머 정리
+          this.clearTurnTimer(code);
+
+          // 방에 남은 플레이어들에게 소켓 정리
+          for (const p of room.players) {
+            const s = this.io.sockets.sockets.get(p.socketId);
+            if (s) {
+              s.leave(this.socketRoom(code));
+              s.data = {};
+            }
+          }
+
+          this.rooms.delete(code);
+          console.log(`[GC] 방 삭제: ${code} (${room.status}, ${Math.round(elapsed / 1000)}초 비활성)`);
+        }
+      }
+    }, RoomManager.GC_INTERVAL);
   }
 
   private createUniqueCode(): string {
@@ -72,6 +111,7 @@ export class RoomManager {
     socket.data = { roomCode: code, playerIndex: session.playerIndex };
     socket.join(this.socketRoom(code));
 
+    room.touch();
     socket.emit('room:created', { roomCode: code, room: room.toRoomInfo(), myPlayerIndex: session.playerIndex });
     console.log(`[방 생성] ${code} by ${playerName}`);
   }
@@ -100,6 +140,7 @@ export class RoomManager {
     socket.data = { roomCode: code, playerIndex: session.playerIndex };
     socket.join(this.socketRoom(code));
 
+    room.touch();
     // 참가한 플레이어에게 myPlayerIndex 전달
     socket.emit('room:joined', { room: room.toRoomInfo(), myPlayerIndex: session.playerIndex });
     // 방 전체에 업데이트 브로드캐스트
@@ -118,6 +159,7 @@ export class RoomManager {
     if (!player) return;
 
     player.ready = ready;
+    room.touch();
     this.io.to(this.socketRoom(roomCode)).emit('room:updated', { room: room.toRoomInfo() });
   }
 
@@ -238,6 +280,7 @@ export class RoomManager {
       return;
     }
 
+    room.touch();
     this.broadcastAndCheckAutoSkip(roomCode, room);
   }
 

@@ -36,8 +36,16 @@ export class GameRoom {
   static readonly MAX_SKIPS = 3;
   static readonly TURN_TIMEOUT_SECONDS = 60;
 
+  // 방 정리용 타임스탬프
+  lastActivityAt: number = Date.now();
+
   constructor(code: string) {
     this.code = code;
+  }
+
+  /** 활동 기록 갱신 (액션, 참가, 레디 등) */
+  touch(): void {
+    this.lastActivityAt = Date.now();
   }
 
   get hostIndex(): number {
@@ -85,6 +93,7 @@ export class GameRoom {
     this.previousLogs = null;
     this.skipCounts = new Array(this.players.length).fill(0);
     this.abandonedPlayers.clear();
+    this.touch();
     return this.gameState;
   }
 
