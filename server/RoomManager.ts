@@ -94,6 +94,8 @@ export class RoomManager {
         this.registerGameEvents(socket);
         return;
       }
+      // 세션을 찾을 수 없음 (방 GC 등) → 클라이언트에 알림
+      socket.emit('room:reconnect_failed');
     }
 
     // 로비 이벤트

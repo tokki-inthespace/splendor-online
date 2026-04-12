@@ -47,6 +47,7 @@ export interface ServerEvents {
     logs: string[];
   }) => void;
   'room:updated': (payload: { room: RoomInfo }) => void;
+  'room:reconnect_failed': () => void;
   'room:error': (payload: { message: string }) => void;
   'game:state': (payload: {
     gameState: GameState;

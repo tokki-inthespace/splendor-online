@@ -122,13 +122,26 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         myPlayerIndex,
         gameState,
         turnPhase,
-        logs,
+        logs: [...logs, '재접속에 성공했습니다'],
         lobbyError: null,
         error: null,
         turnTimer: null,
       });
-      const currentLogs = get().logs;
-      set({ logs: [...currentLogs, '재접속에 성공했습니다'] });
+    });
+
+    socket.on('room:reconnect_failed', () => {
+      clearSessionId();
+      set({
+        connectionStatus: 'disconnected',
+        roomCode: null,
+        roomInfo: null,
+        myPlayerIndex: null,
+        gameState: null,
+        turnPhase: 'idle',
+        logs: [],
+        error: null,
+        turnTimer: null,
+      });
     });
 
     socket.on('room:updated', ({ room }) => {
