@@ -82,21 +82,27 @@ function updatePlayer(state: GameState, player: Player): Player[] {
   );
 }
 
-/** 공개 카드 한 장을 제거하고 덱에서 보충 */
-function refillVisibleCard(
+/** 공개 카드 한 장을 제거 (덱 보충 없이) */
+function removeVisibleCard(
   visibleCards: Record<1 | 2 | 3, Card[]>,
-  deck: Record<1 | 2 | 3, Card[]>,
   level: 1 | 2 | 3,
   removedCardId: string,
-): { visibleCards: Record<1 | 2 | 3, Card[]>; deck: Record<1 | 2 | 3, Card[]> } {
-  const remaining = visibleCards[level].filter(c => c.id !== removedCardId);
-  const deckCards = [...deck[level]];
-  if (deckCards.length > 0) {
-    remaining.push(deckCards.shift()!);
+): Record<1 | 2 | 3, Card[]> {
+  return { ...visibleCards, [level]: visibleCards[level].filter(c => c.id !== removedCardId) };
+}
+
+/** 모든 레벨의 빈 슬롯을 덱에서 보충 (턴 종료 시 호출) */
+export function refillVisibleCards(state: GameState): GameState {
+  const newVisibleCards: Record<1 | 2 | 3, Card[]> = { 1: [...state.visibleCards[1]], 2: [...state.visibleCards[2]], 3: [...state.visibleCards[3]] };
+  const newDeck: Record<1 | 2 | 3, Card[]> = { 1: [...state.deck[1]], 2: [...state.deck[2]], 3: [...state.deck[3]] };
+
+  for (const level of [1, 2, 3] as const) {
+    while (newVisibleCards[level].length < 4 && newDeck[level].length > 0) {
+      newVisibleCards[level].push(newDeck[level].shift()!);
+    }
   }
-  const newVisibleCards: Record<1 | 2 | 3, Card[]> = { ...visibleCards, [level]: remaining };
-  const newDeck: Record<1 | 2 | 3, Card[]> = { ...deck, [level]: deckCards };
-  return { visibleCards: newVisibleCards, deck: newDeck };
+
+  return { ...state, visibleCards: newVisibleCards, deck: newDeck };
 }
 
 // ─── 게임 초기화 ──────────────────────────────────────
@@ -214,14 +220,10 @@ export function purchaseCard(state: GameState, cardId: string): GameState {
     newPoolTokens[color] += payment[color];
   }
 
-  // 공개 카드에서 가져왔으면 덱에서 보충
-  let newVisibleCards = state.visibleCards;
-  let newDeck = state.deck;
-  if (source === 'visible') {
-    ({ visibleCards: newVisibleCards, deck: newDeck } = refillVisibleCard(
-      state.visibleCards, state.deck, sourceLevel, cardId,
-    ));
-  }
+  // 공개 카드에서 가져왔으면 제거 (덱 보충은 턴 종료 시)
+  const newVisibleCards = source === 'visible'
+    ? removeVisibleCard(state.visibleCards, sourceLevel, cardId)
+    : state.visibleCards;
 
   const newPlayer: Player = {
     ...player,
@@ -237,7 +239,6 @@ export function purchaseCard(state: GameState, cardId: string): GameState {
     players: updatePlayer(state, newPlayer),
     tokens: newPoolTokens,
     visibleCards: newVisibleCards,
-    deck: newDeck,
   };
 }
 
@@ -263,9 +264,8 @@ export function reserveCard(state: GameState, cardId: string): GameState {
     newPoolTokens.gold -= 1;
   }
 
-  const { visibleCards, deck } = refillVisibleCard(
-    state.visibleCards, state.deck, sourceLevel, cardId,
-  );
+  // 카드 제거 (덱 보충은 턴 종료 시)
+  const newVisibleCards = removeVisibleCard(state.visibleCards, sourceLevel, cardId);
 
   return {
     ...state,
@@ -275,8 +275,7 @@ export function reserveCard(state: GameState, cardId: string): GameState {
       reservedCards: [...player.reservedCards, card],
     }),
     tokens: newPoolTokens,
-    visibleCards,
-    deck,
+    visibleCards: newVisibleCards,
   };
 }
 
@@ -387,7 +386,9 @@ export function checkWin(state: GameState): GameState {
 // ─── 턴 종료 ──────────────────────────────────────────
 
 export function endTurn(state: GameState): GameState {
-  let s = checkNobles(state);
+  // 빈 슬롯 보충 (카드 구매/예약으로 빈 자리를 턴 확정 시 채움)
+  let s = refillVisibleCards(state);
+  s = checkNobles(s);
   s = checkWin(s);
   if (s.phase === 'ended') return s;
   return { ...s, currentPlayerIndex: (s.currentPlayerIndex + 1) % s.players.length };
