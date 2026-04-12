@@ -15,6 +15,7 @@ export interface RoomInfo {
   code: string;
   players: RoomPlayer[];
   status: 'waiting' | 'playing' | 'ended';
+  spectatorCount: number;
 }
 
 // ─── Client → Server 이벤트 ──────────────────────────────
@@ -47,6 +48,13 @@ export interface ServerEvents {
     logs: string[];
   }) => void;
   'room:updated': (payload: { room: RoomInfo }) => void;
+  'room:spectator_joined': (payload: {
+    roomCode: string;
+    room: RoomInfo;
+    gameState: GameState;
+    turnPhase: TurnPhase;
+    logs: string[];
+  }) => void;
   'room:reconnect_failed': () => void;
   'room:error': (payload: { message: string }) => void;
   'game:state': (payload: {

@@ -33,6 +33,9 @@ interface MultiplayerStore {
   logs: string[];
   error: string | null;
 
+  // 관전 모드
+  isSpectator: boolean;
+
   // 턴 타이머
   turnTimer: { remainingSeconds: number; playerName: string; playerIndex: number } | null;
 
@@ -72,6 +75,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   turnPhase: 'idle',
   logs: [],
   error: null,
+  isSpectator: false,
   turnTimer: null,
 
   connect: () => {
@@ -94,7 +98,23 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
     });
 
     socket.on('disconnect', () => {
-      const { roomCode } = get();
+      const { roomCode, isSpectator } = get();
+      // 관전자는 재접속 불가 → 즉시 초기화
+      if (isSpectator) {
+        set({
+          connectionStatus: 'disconnected',
+          roomCode: null,
+          roomInfo: null,
+          myPlayerIndex: null,
+          gameState: null,
+          turnPhase: 'idle',
+          logs: [],
+          error: null,
+          isSpectator: false,
+          turnTimer: null,
+        });
+        return;
+      }
       // 게임/로비에 있었다면 reconnecting 상태로 (Socket.IO가 자동 재접속 시도)
       if (roomCode) {
         set({ connectionStatus: 'reconnecting' });
@@ -129,6 +149,22 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       });
     });
 
+    socket.on('room:spectator_joined', ({ roomCode, room, gameState, turnPhase, logs }) => {
+      set({
+        connectionStatus: 'connected',
+        roomCode,
+        roomInfo: room,
+        myPlayerIndex: -1,
+        gameState,
+        turnPhase,
+        logs,
+        isSpectator: true,
+        lobbyError: null,
+        error: null,
+        turnTimer: null,
+      });
+    });
+
     socket.on('room:reconnect_failed', () => {
       clearSessionId();
       set({
@@ -140,6 +176,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         turnPhase: 'idle',
         logs: [],
         error: null,
+        isSpectator: false,
         turnTimer: null,
       });
     });
@@ -191,6 +228,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         turnPhase: 'idle',
         logs: [],
         error: null,
+        isSpectator: false,
         turnTimer: null,
       });
     });
@@ -211,6 +249,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       turnPhase: 'idle',
       logs: [],
       error: null,
+      isSpectator: false,
       turnTimer: null,
     });
   },
@@ -246,6 +285,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       turnPhase: 'idle',
       logs: [],
       error: null,
+      isSpectator: false,
       turnTimer: null,
     });
   },

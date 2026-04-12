@@ -13,6 +13,11 @@ import {
   getPlayerScore,
 } from '../src/game/gameLogic';
 
+export interface SpectatorSession {
+  socketId: string;
+  name: string;
+}
+
 export interface PlayerSession {
   name: string;
   socketId: string;
@@ -26,6 +31,7 @@ export class GameRoom {
   code: string;
   status: 'waiting' | 'playing' | 'ended' = 'waiting';
   players: PlayerSession[] = [];
+  spectators: SpectatorSession[] = [];
   gameState: GameState | null = null;
   turnPhase: TurnPhase = 'idle';
   previousState: GameState | null = null;
@@ -69,6 +75,23 @@ export class GameRoom {
 
   getPlayerBySessionId(sessionId: string): PlayerSession | undefined {
     return this.players.find(p => p.sessionId === sessionId);
+  }
+
+  addSpectator(name: string, socketId: string): SpectatorSession {
+    const session: SpectatorSession = { socketId, name };
+    this.spectators.push(session);
+    return session;
+  }
+
+  removeSpectator(socketId: string): SpectatorSession | undefined {
+    const idx = this.spectators.findIndex(s => s.socketId === socketId);
+    if (idx === -1) return undefined;
+    const [removed] = this.spectators.splice(idx, 1);
+    return removed;
+  }
+
+  getSpectatorBySocketId(socketId: string): SpectatorSession | undefined {
+    return this.spectators.find(s => s.socketId === socketId);
   }
 
   removePlayer(socketId: string): PlayerSession | undefined {
@@ -378,6 +401,7 @@ export class GameRoom {
         isHost: p.playerIndex === this.hostIndex,
         connected: p.connected,
       })),
+      spectatorCount: this.spectators.length,
     };
   }
 

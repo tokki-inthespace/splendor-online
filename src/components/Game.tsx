@@ -47,7 +47,8 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
       turnPhase: mp.turnPhase,
       error: mp.error,
       logs: mp.logs,
-      myPlayerIndex: mp.myPlayerIndex ?? 0,
+      myPlayerIndex: mp.myPlayerIndex ?? -1,
+      isSpectator: mp.isSpectator,
       turnTimer: mp.turnTimer,
       doTakeTokens: mp.doTakeTokens,
       doPurchaseCard: mp.doPurchaseCard,
@@ -68,6 +69,7 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
     error: sp.error,
     logs: sp.logs,
     myPlayerIndex: 0,
+    isSpectator: false,
     turnTimer: null as { remainingSeconds: number; playerName: string; playerIndex: number } | null,
     doTakeTokens: sp.doTakeTokens,
     doPurchaseCard: sp.doPurchaseCard,
@@ -84,7 +86,7 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
 
 export function Game({ mode }: GameProps) {
   const {
-    gameState, turnPhase, error, myPlayerIndex, turnTimer,
+    gameState, turnPhase, error, myPlayerIndex, isSpectator, turnTimer,
     doTakeTokens, doPurchaseCard, doReserveCard, doReserveCardFromDeck,
     doDiscardTokens, undoAction, confirmTurn, clearError,
     startGame, resetGame,
@@ -108,13 +110,15 @@ export function Game({ mode }: GameProps) {
 
   if (!gameState) return null;
 
-  const myPlayer = gameState.players[myPlayerIndex];
+  const myPlayer = isSpectator ? undefined : gameState.players[myPlayerIndex];
   // 확정 전 새로 추가된 예약 카드 ID (뒷면으로 표시해야 함)
-  const pendingReservedIds = turnPhase !== 'idle'
+  const pendingReservedIds = !isSpectator && myPlayer && turnPhase !== 'idle'
     ? new Set(myPlayer.reservedCards.filter(c => !confirmedReservedIds.current.has(c.id)).map(c => c.id))
     : new Set<string>();
-  const opponents = gameState.players.filter((_, i) => i !== myPlayerIndex);
-  const isMyTurn = gameState.currentPlayerIndex === myPlayerIndex && gameState.phase === 'playing';
+  const opponents = isSpectator
+    ? gameState.players
+    : gameState.players.filter((_, i) => i !== myPlayerIndex);
+  const isMyTurn = !isSpectator && gameState.currentPlayerIndex === myPlayerIndex && gameState.phase === 'playing';
   const boardDisabled = !isMyTurn || turnPhase !== 'idle';
   const currentTurnPlayer = gameState.players[gameState.currentPlayerIndex];
 
@@ -254,7 +258,7 @@ export function Game({ mode }: GameProps) {
   // ─── 렌더링 ─────────────────────────
 
   const totalDiscarding = Object.values(discardSelection).reduce((s, n) => s + (n ?? 0), 0);
-  const tokensToDiscard = getTotalTokenCount(myPlayer) - 10;
+  const tokensToDiscard = myPlayer ? getTotalTokenCount(myPlayer) - 10 : 0;
   const playerCount = gameState.players.length;
   const layoutClass = playerCount <= 2 ? 'layout-2p' : playerCount === 3 ? 'layout-3p' : 'layout-4p';
 
@@ -264,7 +268,7 @@ export function Game({ mode }: GameProps) {
     <PlayerPanel
       key={player.id}
       player={player}
-      isOpponent
+      isOpponent={!isSpectator}
       compact={isMultiSeat}
       isCurrentTurn={gameState.currentPlayerIndex === gameState.players.indexOf(player)}
     />
@@ -281,7 +285,7 @@ export function Game({ mode }: GameProps) {
     />
   );
 
-  const myPanel = (
+  const myPanel = myPlayer ? (
     <PlayerPanel
       player={myPlayer}
       compact={isMultiSeat}
@@ -289,12 +293,12 @@ export function Game({ mode }: GameProps) {
       onReservedCardClick={(card) => handleCardClick(card, 'reserved')}
       hiddenCardIds={pendingReservedIds}
     />
-  );
+  ) : null;
 
   return (
     <div className={`game ${layoutClass}`}>
       {/* 2인: 기존 레이아웃 */}
-      {playerCount <= 2 && (
+      {playerCount <= 2 && !isSpectator && (
         <>
           {opponents[0] && opponentPanel(opponents[0])}
           {boardElement}
@@ -302,8 +306,17 @@ export function Game({ mode }: GameProps) {
         </>
       )}
 
+      {/* 2인 관전 */}
+      {playerCount <= 2 && isSpectator && (
+        <>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0])}</div>
+          <div className="seat-center">{boardElement}</div>
+          <div className="seat-bottom">{opponents[1] && opponentPanel(opponents[1])}</div>
+        </>
+      )}
+
       {/* 3인: 상단 + 좌측 + 보드 + 하단 */}
-      {playerCount === 3 && (
+      {playerCount === 3 && !isSpectator && (
         <>
           <div className="seat-top">{opponents[0] && opponentPanel(opponents[0])}</div>
           <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
@@ -312,14 +325,35 @@ export function Game({ mode }: GameProps) {
         </>
       )}
 
+      {/* 3인 관전 */}
+      {playerCount === 3 && isSpectator && (
+        <>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0])}</div>
+          <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
+          <div className="seat-center">{boardElement}</div>
+          <div className="seat-bottom">{opponents[2] && opponentPanel(opponents[2])}</div>
+        </>
+      )}
+
       {/* 4인: 상단 + 좌측 + 보드 + 우측 + 하단 */}
-      {playerCount === 4 && (
+      {playerCount === 4 && !isSpectator && (
         <>
           <div className="seat-top">{opponents[0] && opponentPanel(opponents[0])}</div>
           <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
           <div className="seat-center">{boardElement}</div>
           <div className="seat-right">{opponents[2] && opponentPanel(opponents[2])}</div>
           <div className="seat-bottom">{myPanel}</div>
+        </>
+      )}
+
+      {/* 4인 관전 */}
+      {playerCount === 4 && isSpectator && (
+        <>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0])}</div>
+          <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
+          <div className="seat-center">{boardElement}</div>
+          <div className="seat-right">{opponents[2] && opponentPanel(opponents[2])}</div>
+          <div className="seat-bottom">{opponents[3] && opponentPanel(opponents[3])}</div>
         </>
       )}
 
@@ -436,9 +470,11 @@ export function Game({ mode }: GameProps) {
         <div className={`action-bar ai-bar ${turnTimer ? 'has-timer' : ''}`}>
           {mode === 'singleplayer'
             ? 'AI가 생각 중...'
-            : turnTimer
-              ? `${turnTimer.playerName}의 연결이 끊겼습니다. 60초 대기 후 퇴장 처리합니다.`
-              : `${currentTurnPlayer.name}의 턴 — 대기 중...`
+            : isSpectator
+              ? `관전 중 — ${currentTurnPlayer.name}의 턴`
+              : turnTimer
+                ? `${turnTimer.playerName}의 연결이 끊겼습니다. 60초 대기 후 퇴장 처리합니다.`
+                : `${currentTurnPlayer.name}의 턴 — 대기 중...`
           }
         </div>
       )}
@@ -463,7 +499,7 @@ export function Game({ mode }: GameProps) {
           <div className="modal game-over">
             <div className="modal-title">게임 종료!</div>
             <div className="winner-name">
-              {gameState.winner.id === myPlayer.id
+              {!isSpectator && myPlayer && gameState.winner.id === myPlayer.id
                 ? '승리!'
                 : `${gameState.winner.name} 승리`
               }
@@ -474,7 +510,7 @@ export function Game({ mode }: GameProps) {
               ).join(' / ')}
             </div>
             <div className="modal-actions">
-              {mode === 'singleplayer' && startGame && (
+              {mode === 'singleplayer' && startGame && myPlayer && (
                 <button className="btn btn-confirm" onClick={() => startGame(myPlayer.name)}>
                   다시하기
                 </button>
