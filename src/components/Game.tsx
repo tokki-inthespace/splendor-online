@@ -437,7 +437,7 @@ export function Game({ mode }: GameProps) {
           {mode === 'singleplayer'
             ? 'AI가 생각 중...'
             : turnTimer
-              ? <><span className="turn-timer-count">{turnTimer.remainingSeconds}초</span> {turnTimer.playerName}의 턴 — 연결 끊김, 자동 스킵 대기</>
+              ? `${turnTimer.playerName}의 연결이 끊겼습니다. 60초 대기 후 퇴장 처리합니다.`
               : `${currentTurnPlayer.name}의 턴 — 대기 중...`
           }
         </div>

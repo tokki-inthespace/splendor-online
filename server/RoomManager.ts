@@ -86,6 +86,16 @@ export class RoomManager {
   }
 
   registerSocket(socket: IOSocket): void {
+    // 재접속 시도: auth에 sessionId가 있으면 기존 세션 복구
+    const authSessionId = socket.handshake.auth?.sessionId as string | undefined;
+    if (authSessionId) {
+      const reconnected = this.tryReconnect(socket, authSessionId);
+      if (reconnected) {
+        this.registerGameEvents(socket);
+        return;
+      }
+    }
+
     // 로비 이벤트
     socket.on('room:create', ({ playerName }) => this.handleCreate(socket, playerName));
     socket.on('room:join', ({ roomCode, playerName }) => this.handleJoin(socket, roomCode, playerName));
@@ -95,6 +105,10 @@ export class RoomManager {
     socket.on('disconnect', () => this.handleDisconnect(socket));
 
     // 게임 액션 이벤트
+    this.registerGameEvents(socket);
+  }
+
+  private registerGameEvents(socket: IOSocket): void {
     socket.on('game:takeTokens', ({ tokens }) => this.handleGameAction(socket, room => room.handleTakeTokens(socket.data.playerIndex, tokens)));
     socket.on('game:purchaseCard', ({ cardId }) => this.handleGameAction(socket, room => room.handlePurchaseCard(socket.data.playerIndex, cardId)));
     socket.on('game:reserveCard', ({ cardId }) => this.handleGameAction(socket, room => room.handleReserveCard(socket.data.playerIndex, cardId)));
@@ -102,6 +116,70 @@ export class RoomManager {
     socket.on('game:discardTokens', ({ tokens }) => this.handleGameAction(socket, room => room.handleDiscardTokens(socket.data.playerIndex, tokens)));
     socket.on('game:undoAction', () => this.handleGameAction(socket, room => room.handleUndoAction(socket.data.playerIndex)));
     socket.on('game:confirmTurn', () => this.handleGameAction(socket, room => room.handleConfirmTurn(socket.data.playerIndex)));
+  }
+
+  /** sessionId로 기존 세션 복구 시도. 성공하면 true 반환. */
+  private tryReconnect(socket: IOSocket, sessionId: string): boolean {
+    for (const [code, room] of this.rooms) {
+      const player = room.getPlayerBySessionId(sessionId);
+      if (!player) continue;
+
+      // 이미 연결된 상태면 재접속 불필요
+      if (player.connected) return false;
+
+      const oldSocketId = player.socketId;
+
+      // 기존 disconnect 타이머 취소
+      const dt = this.disconnectTimers.get(oldSocketId);
+      if (dt) {
+        clearTimeout(dt);
+        this.disconnectTimers.delete(oldSocketId);
+      }
+
+      // 소켓 정보 업데이트
+      player.socketId = socket.id;
+      player.connected = true;
+      socket.data = { roomCode: code, playerIndex: player.playerIndex };
+      socket.join(this.socketRoom(code));
+
+      room.touch();
+
+      // 재접속 이벤트 등록 (로비 이벤트 + disconnect)
+      socket.on('room:ready', ({ ready }) => this.handleReady(socket, ready));
+      socket.on('room:start', () => this.handleStart(socket));
+      socket.on('room:leave', () => this.handleLeave(socket));
+      socket.on('disconnect', () => this.handleDisconnect(socket));
+
+      // 재접속 플레이어에게 전체 상태 전송
+      socket.emit('room:reconnected', {
+        roomCode: code,
+        room: room.toRoomInfo(),
+        myPlayerIndex: player.playerIndex,
+        sessionId: player.sessionId,
+        gameState: room.gameState,
+        turnPhase: room.turnPhase,
+        logs: room.logs,
+      });
+
+      // 다른 플레이어들에게 재접속 알림
+      socket.to(this.socketRoom(code)).emit('player:reconnected', {
+        playerName: player.name,
+        playerIndex: player.playerIndex,
+      });
+
+      // 재접속한 플레이어가 현재 턴이고 턴 타이머가 돌고 있었다면 정리
+      if (room.gameState && room.status === 'playing') {
+        const isCurrentTurn = room.gameState.currentPlayerIndex === player.playerIndex;
+        if (isCurrentTurn && this.turnTimers.has(code)) {
+          // 재접속했으므로 턴 타이머 중단, 정상 플레이 가능
+          this.clearTurnTimer(code);
+        }
+      }
+
+      console.log(`[재접속] ${code} — ${player.name} (idx=${player.playerIndex})`);
+      return true;
+    }
+    return false;
   }
 
   private handleCreate(socket: IOSocket, playerName: string): void {
@@ -117,7 +195,7 @@ export class RoomManager {
     socket.join(this.socketRoom(code));
 
     room.touch();
-    socket.emit('room:created', { roomCode: code, room: room.toRoomInfo(), myPlayerIndex: session.playerIndex });
+    socket.emit('room:created', { roomCode: code, room: room.toRoomInfo(), myPlayerIndex: session.playerIndex, sessionId: session.sessionId });
     console.log(`[방 생성] ${code} by ${playerName}`);
   }
 
@@ -146,8 +224,8 @@ export class RoomManager {
     socket.join(this.socketRoom(code));
 
     room.touch();
-    // 참가한 플레이어에게 myPlayerIndex 전달
-    socket.emit('room:joined', { room: room.toRoomInfo(), myPlayerIndex: session.playerIndex });
+    // 참가한 플레이어에게 myPlayerIndex + sessionId 전달
+    socket.emit('room:joined', { room: room.toRoomInfo(), myPlayerIndex: session.playerIndex, sessionId: session.sessionId });
     // 방 전체에 업데이트 브로드캐스트
     this.io.to(this.socketRoom(code)).emit('room:updated', { room: room.toRoomInfo() });
     console.log(`[방 참가] ${code} — ${playerName} (${room.players.length}명)`);

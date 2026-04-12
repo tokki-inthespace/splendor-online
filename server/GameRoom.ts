@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import type { Card, GameState, GemMap, TokenMap } from '../src/types/game';
 import type { RoomInfo, RoomPlayer, TurnPhase } from '../src/protocol';
 import {
@@ -15,6 +16,7 @@ import {
 export interface PlayerSession {
   name: string;
   socketId: string;
+  sessionId: string;
   playerIndex: number;
   ready: boolean;
   connected: boolean;
@@ -56,12 +58,17 @@ export class GameRoom {
     const session: PlayerSession = {
       name,
       socketId,
+      sessionId: randomUUID(),
       playerIndex: this.players.length,
       ready: false,
       connected: true,
     };
     this.players.push(session);
     return session;
+  }
+
+  getPlayerBySessionId(sessionId: string): PlayerSession | undefined {
+    return this.players.find(p => p.sessionId === sessionId);
   }
 
   removePlayer(socketId: string): PlayerSession | undefined {

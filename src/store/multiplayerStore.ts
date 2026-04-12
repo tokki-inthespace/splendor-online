@@ -3,9 +3,23 @@ import type { GameState, GemMap, TokenMap } from '../types/game';
 import type { RoomInfo, TurnPhase } from '../protocol';
 import { getSocket, disconnectSocket } from '../hooks/useSocket';
 
+const SESSION_KEY = 'splendor-session-id';
+
+function saveSessionId(sessionId: string): void {
+  sessionStorage.setItem(SESSION_KEY, sessionId);
+}
+
+function loadSessionId(): string | undefined {
+  return sessionStorage.getItem(SESSION_KEY) ?? undefined;
+}
+
+function clearSessionId(): void {
+  sessionStorage.removeItem(SESSION_KEY);
+}
+
 interface MultiplayerStore {
   // 연결 상태
-  connectionStatus: 'disconnected' | 'connecting' | 'connected';
+  connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
   // 로비 상태
   roomCode: string | null;
@@ -61,7 +75,10 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   turnTimer: null,
 
   connect: () => {
-    const socket = getSocket();
+    const savedSessionId = loadSessionId();
+    const auth = savedSessionId ? { sessionId: savedSessionId } : undefined;
+    const socket = getSocket(auth);
+
     if (socket.connected) {
       set({ connectionStatus: 'connected' });
       return;
@@ -70,22 +87,48 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
     // 기존 리스너 제거 (중복 방지)
     socket.removeAllListeners();
 
-    set({ connectionStatus: 'connecting' });
+    set({ connectionStatus: savedSessionId ? 'reconnecting' : 'connecting' });
 
     socket.on('connect', () => {
       set({ connectionStatus: 'connected' });
     });
 
     socket.on('disconnect', () => {
-      set({ connectionStatus: 'disconnected' });
+      const { roomCode } = get();
+      // 게임/로비에 있었다면 reconnecting 상태로 (Socket.IO가 자동 재접속 시도)
+      if (roomCode) {
+        set({ connectionStatus: 'reconnecting' });
+      } else {
+        set({ connectionStatus: 'disconnected' });
+      }
     });
 
-    socket.on('room:created', ({ roomCode, room, myPlayerIndex }) => {
+    socket.on('room:created', ({ roomCode, room, myPlayerIndex, sessionId }) => {
+      saveSessionId(sessionId);
       set({ roomCode, roomInfo: room, myPlayerIndex, lobbyError: null });
     });
 
-    socket.on('room:joined', ({ room, myPlayerIndex }) => {
+    socket.on('room:joined', ({ room, myPlayerIndex, sessionId }) => {
+      saveSessionId(sessionId);
       set({ roomCode: room.code, roomInfo: room, myPlayerIndex, lobbyError: null });
+    });
+
+    socket.on('room:reconnected', ({ roomCode, room, myPlayerIndex, sessionId, gameState, turnPhase, logs }) => {
+      saveSessionId(sessionId);
+      set({
+        connectionStatus: 'connected',
+        roomCode,
+        roomInfo: room,
+        myPlayerIndex,
+        gameState,
+        turnPhase,
+        logs,
+        lobbyError: null,
+        error: null,
+        turnTimer: null,
+      });
+      const currentLogs = get().logs;
+      set({ logs: [...currentLogs, '재접속에 성공했습니다'] });
     });
 
     socket.on('room:updated', ({ room }) => {
@@ -115,7 +158,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
 
     socket.on('player:reconnected', ({ playerName }) => {
       const { logs } = get();
-      set({ logs: [...logs, `${playerName}이(가) 다시 접속했습니다`] });
+      set({ logs: [...logs, `${playerName}이(가) 다시 접속했습니다`], turnTimer: null });
     });
 
     socket.on('player:abandoned', ({ playerName }) => {
@@ -123,11 +166,28 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       set({ logs: [...logs, `${playerName}이(가) 게임에서 퇴장되었습니다`] });
     });
 
+    // 재접속 최대 시도 초과 시 정리
+    socket.io.on('reconnect_failed', () => {
+      clearSessionId();
+      set({
+        connectionStatus: 'disconnected',
+        roomCode: null,
+        roomInfo: null,
+        myPlayerIndex: null,
+        gameState: null,
+        turnPhase: 'idle',
+        logs: [],
+        error: null,
+        turnTimer: null,
+      });
+    });
+
     socket.connect();
   },
 
   disconnect: () => {
     disconnectSocket();
+    clearSessionId();
     set({
       connectionStatus: 'disconnected',
       roomCode: null,
@@ -162,6 +222,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   leaveRoom: () => {
     getSocket().emit('room:leave');
     disconnectSocket();
+    clearSessionId();
     set({
       connectionStatus: 'disconnected',
       roomCode: null,

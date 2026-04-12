@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from './store/gameStore';
 import { useMultiplayerStore } from './store/multiplayerStore';
 import { Game } from './components/Game';
@@ -11,6 +11,19 @@ function App() {
   const singleStore = useGameStore();
   const mpStore = useMultiplayerStore();
   const [mode, setMode] = useState<AppMode>('menu');
+  const reconnectAttempted = useRef(false);
+
+  // 페이지 로드 시 sessionStorage에 sessionId가 있으면 자동 재접속 시도
+  useEffect(() => {
+    if (reconnectAttempted.current) return;
+    reconnectAttempted.current = true;
+
+    const savedSession = sessionStorage.getItem('splendor-session-id');
+    if (savedSession && mode === 'menu') {
+      mpStore.connect();
+      setMode('lobby');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [playerName, setPlayerName] = useState('');
   const [roomCodeInput, setRoomCodeInput] = useState('');
 
@@ -34,6 +47,17 @@ function App() {
     // 로비 (방 정보 있음)
     if (mpStore.roomInfo) {
       return <Lobby onLeave={goToMenu} />;
+    }
+
+    // 재접속 중
+    if (mpStore.connectionStatus === 'reconnecting') {
+      return (
+        <div className="start-screen">
+          <h1 className="start-title">Splendor Online</h1>
+          <p className="start-subtitle">재접속 중...</p>
+          <button className="btn btn-cancel" onClick={goToMenu}>취소</button>
+        </div>
+      );
     }
 
     // 연결 중 / 방 생성 대기

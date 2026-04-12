@@ -35,8 +35,17 @@ export interface ClientEvents {
 
 // ─── Server → Client 이벤트 ──────────────────────────────
 export interface ServerEvents {
-  'room:created': (payload: { roomCode: string; room: RoomInfo; myPlayerIndex: number }) => void;
-  'room:joined': (payload: { room: RoomInfo; myPlayerIndex: number }) => void;
+  'room:created': (payload: { roomCode: string; room: RoomInfo; myPlayerIndex: number; sessionId: string }) => void;
+  'room:joined': (payload: { room: RoomInfo; myPlayerIndex: number; sessionId: string }) => void;
+  'room:reconnected': (payload: {
+    roomCode: string;
+    room: RoomInfo;
+    myPlayerIndex: number;
+    sessionId: string;
+    gameState: GameState | null;
+    turnPhase: TurnPhase;
+    logs: string[];
+  }) => void;
   'room:updated': (payload: { room: RoomInfo }) => void;
   'room:error': (payload: { message: string }) => void;
   'game:state': (payload: {
