@@ -332,8 +332,8 @@ export function Game({ mode }: GameProps) {
         </div>
       )}
 
-      {/* 토큰 버리기 모달 */}
-      {turnPhase === 'discarding' && (
+      {/* 토큰 버리기 모달 (내 턴일 때만) */}
+      {turnPhase === 'discarding' && isMyTurn && (
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-title">토큰 버리기 ({tokensToDiscard}개 선택)</div>
@@ -373,8 +373,8 @@ export function Game({ mode }: GameProps) {
         </div>
       )}
 
-      {/* 턴 확정 / 취소 바 */}
-      {turnPhase === 'action' && (
+      {/* 턴 확정 / 취소 바 (내 턴일 때만) */}
+      {turnPhase === 'action' && isMyTurn && (
         <div className="action-bar turn-bar">
           <button className="btn btn-confirm" onClick={handleConfirmTurn}>턴 확정</button>
           <button className="btn btn-cancel" onClick={handleUndo}>취소 (되돌리기)</button>
