@@ -41,7 +41,7 @@ export interface GameState {
   players: Player[];
   currentPlayerIndex: number;
   deck: Record<1 | 2 | 3, Card[]>;        // 레벨별 남은 덱
-  visibleCards: Record<1 | 2 | 3, Card[]>; // 레벨별 공개된 카드 (각 4장)
+  visibleCards: Record<1 | 2 | 3, (Card | null)[]>; // 레벨별 공개된 카드 (각 4장, null = 빈 슬롯)
   nobles: Noble[];                          // 남은 귀족 타일
   tokens: TokenMap;                         // 공용 토큰 풀
   winner: Player | null;

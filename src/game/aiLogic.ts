@@ -31,9 +31,9 @@ function getDeficit(player: { tokens: GameState['players'][0]['tokens']; cards: 
 function getAllAvailableCards(state: GameState): Card[] {
   const player = state.players[state.currentPlayerIndex];
   return [
-    ...state.visibleCards[1],
-    ...state.visibleCards[2],
-    ...state.visibleCards[3],
+    ...state.visibleCards[1].filter((c): c is Card => c !== null),
+    ...state.visibleCards[2].filter((c): c is Card => c !== null),
+    ...state.visibleCards[3].filter((c): c is Card => c !== null),
     ...player.reservedCards,
   ];
 }
