@@ -16,9 +16,10 @@ interface Props {
   isCurrentTurn?: boolean;
   compact?: boolean;
   onReservedCardClick?: (card: Card) => void;
+  hiddenCardIds?: Set<string>;
 }
 
-export function PlayerPanel({ player, isOpponent, isCurrentTurn, compact, onReservedCardClick }: Props) {
+export function PlayerPanel({ player, isOpponent, isCurrentTurn, compact, onReservedCardClick, hiddenCardIds }: Props) {
   const score = getPlayerScore(player);
   const bonuses = getPlayerBonuses(player);
   const totalTokens = getTotalTokenCount(player);
@@ -76,8 +77,9 @@ export function PlayerPanel({ player, isOpponent, isCurrentTurn, compact, onRese
         <div className="player-reserved">
           <span className="section-label">예약 ({player.reservedCards.length}/3)</span>
           <div className="reserved-cards">
-            {sortByColor(player.reservedCards).map(card => (
-              isOpponent ? (
+            {sortByColor(player.reservedCards).map(card => {
+              const isHidden = isOpponent || hiddenCardIds?.has(card.id);
+              return isHidden ? (
                 <div key={card.id} className="reserved-card-back">?</div>
               ) : (
                 <div
@@ -89,8 +91,8 @@ export function PlayerPanel({ player, isOpponent, isCurrentTurn, compact, onRese
                   <span className="mini-points">{card.points > 0 ? card.points : ''}</span>
                   <span className="mini-gem" style={{ backgroundColor: GEM_STYLE[card.color].bg }}>●</span>
                 </div>
-              )
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

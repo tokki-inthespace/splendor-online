@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Card, GemColor } from '../types/game';
 import { canAffordCard, getTotalTokenCount, getPlayerScore } from '../game/gameLogic';
 import { useGameStore } from '../store/gameStore';
@@ -72,9 +72,23 @@ export function Game({ mode }: GameProps) {
   const [cardSource, setCardSource] = useState<'visible' | 'reserved'>('visible');
   const [discardSelection, setDiscardSelection] = useState<Partial<Record<GemColor | 'gold', number>>>({});
 
+  // turnPhase가 idle일 때의 예약 카드 ID를 기억 (덱 예약 치팅 방지)
+  const confirmedReservedIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (gameState && turnPhase === 'idle') {
+      confirmedReservedIds.current = new Set(
+        gameState.players[myPlayerIndex]?.reservedCards.map(c => c.id) ?? []
+      );
+    }
+  }, [gameState, turnPhase, myPlayerIndex]);
+
   if (!gameState) return null;
 
   const myPlayer = gameState.players[myPlayerIndex];
+  // 확정 전 새로 추가된 예약 카드 ID (뒷면으로 표시해야 함)
+  const pendingReservedIds = turnPhase !== 'idle'
+    ? new Set(myPlayer.reservedCards.filter(c => !confirmedReservedIds.current.has(c.id)).map(c => c.id))
+    : new Set<string>();
   const opponents = gameState.players.filter((_, i) => i !== myPlayerIndex);
   const isMyTurn = gameState.currentPlayerIndex === myPlayerIndex && gameState.phase === 'playing';
   const boardDisabled = !isMyTurn || turnPhase !== 'idle';
@@ -249,6 +263,7 @@ export function Game({ mode }: GameProps) {
       compact={isMultiSeat}
       isCurrentTurn={gameState.currentPlayerIndex === myPlayerIndex}
       onReservedCardClick={(card) => handleCardClick(card, 'reserved')}
+      hiddenCardIds={pendingReservedIds}
     />
   );
 
