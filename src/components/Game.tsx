@@ -128,6 +128,13 @@ export function Game({ mode }: GameProps) {
   // ─── 카드 클릭 ──────────────────────
 
   const handleCardClick = (card: Card, source: 'visible' | 'reserved' = 'visible') => {
+    // 내 예약 카드는 상대 턴에도 조회 가능
+    if (source === 'reserved') {
+      setSelectedCard(card);
+      setCardSource(source);
+      setUIMode('cardAction');
+      return;
+    }
     if (!isMyTurn || turnPhase !== 'idle') return;
     setSelectedCard(card);
     setCardSource(source);
@@ -316,15 +323,19 @@ export function Game({ mode }: GameProps) {
               </div>
             </div>
             <div className="modal-actions">
-              <button
-                className="btn btn-confirm"
-                onClick={handleBuyCard}
-                disabled={!canAffordCard(myPlayer, selectedCard)}
-              >
-                구매{!canAffordCard(myPlayer, selectedCard) ? ' (불가)' : ''}
-              </button>
-              {cardSource === 'visible' && myPlayer.reservedCards.length < 3 && (
-                <button className="btn btn-reserve" onClick={handleReserveCard}>예약</button>
+              {isMyTurn && turnPhase === 'idle' && (
+                <>
+                  <button
+                    className="btn btn-confirm"
+                    onClick={handleBuyCard}
+                    disabled={!canAffordCard(myPlayer, selectedCard)}
+                  >
+                    구매{!canAffordCard(myPlayer, selectedCard) ? ' (불가)' : ''}
+                  </button>
+                  {cardSource === 'visible' && myPlayer.reservedCards.length < 3 && (
+                    <button className="btn btn-reserve" onClick={handleReserveCard}>예약</button>
+                  )}
+                </>
               )}
               <button className="btn btn-cancel" onClick={handleCloseCardAction}>닫기</button>
             </div>
