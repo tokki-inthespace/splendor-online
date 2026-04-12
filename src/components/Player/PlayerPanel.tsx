@@ -14,16 +14,17 @@ interface Props {
   player: Player;
   isOpponent?: boolean;
   isCurrentTurn?: boolean;
+  compact?: boolean;
   onReservedCardClick?: (card: Card) => void;
 }
 
-export function PlayerPanel({ player, isOpponent, isCurrentTurn, onReservedCardClick }: Props) {
+export function PlayerPanel({ player, isOpponent, isCurrentTurn, compact, onReservedCardClick }: Props) {
   const score = getPlayerScore(player);
   const bonuses = getPlayerBonuses(player);
   const totalTokens = getTotalTokenCount(player);
 
   return (
-    <div className={`player-panel ${isOpponent ? 'opponent' : 'self'} ${isCurrentTurn ? 'current-turn' : ''}`}>
+    <div className={`player-panel ${isOpponent ? 'opponent' : 'self'} ${isCurrentTurn ? 'current-turn' : ''} ${compact ? 'compact' : ''}`}>
       <div className="player-header">
         <span className="player-name">{player.name}</span>
         <span className="player-score">{score}점</span>

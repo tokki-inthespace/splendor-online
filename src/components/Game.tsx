@@ -1,20 +1,70 @@
 import { useState, useCallback } from 'react';
 import type { Card, GemColor } from '../types/game';
-import { canAffordCard, getTotalTokenCount } from '../game/gameLogic';
+import { canAffordCard, getTotalTokenCount, getPlayerScore } from '../game/gameLogic';
 import { useGameStore } from '../store/gameStore';
+import { useMultiplayerStore } from '../store/multiplayerStore';
 import { Board } from './Board/Board';
 import { PlayerPanel } from './Player/PlayerPanel';
 import { GEM_STYLE, TOKEN_STYLE, GEM_COLORS } from '../utils/gemColors';
 
 type UIMode = 'idle' | 'selectingTokens' | 'cardAction' | 'discarding';
 
-export function Game() {
+interface GameProps {
+  mode: 'singleplayer' | 'multiplayer';
+}
+
+function useGameActions(mode: 'singleplayer' | 'multiplayer') {
+  const sp = useGameStore();
+  const mp = useMultiplayerStore();
+
+  if (mode === 'multiplayer') {
+    return {
+      gameState: mp.gameState,
+      turnPhase: mp.turnPhase,
+      error: mp.error,
+      logs: mp.logs,
+      myPlayerIndex: mp.myPlayerIndex ?? 0,
+      turnTimer: mp.turnTimer,
+      doTakeTokens: mp.doTakeTokens,
+      doPurchaseCard: mp.doPurchaseCard,
+      doReserveCard: mp.doReserveCard,
+      doReserveCardFromDeck: mp.doReserveCardFromDeck,
+      doDiscardTokens: mp.doDiscardTokens,
+      undoAction: mp.undoAction,
+      confirmTurn: mp.confirmTurn,
+      clearError: mp.clearError,
+      resetGame: mp.resetGame,
+      startGame: undefined as undefined | ((name: string) => void),
+    };
+  }
+
+  return {
+    gameState: sp.gameState,
+    turnPhase: sp.turnPhase,
+    error: sp.error,
+    logs: sp.logs,
+    myPlayerIndex: 0,
+    turnTimer: null as { remainingSeconds: number; playerName: string; playerIndex: number } | null,
+    doTakeTokens: sp.doTakeTokens,
+    doPurchaseCard: sp.doPurchaseCard,
+    doReserveCard: sp.doReserveCard,
+    doReserveCardFromDeck: sp.doReserveCardFromDeck,
+    doDiscardTokens: sp.doDiscardTokens,
+    undoAction: sp.undoAction,
+    confirmTurn: sp.confirmTurn,
+    clearError: sp.clearError,
+    resetGame: sp.resetGame,
+    startGame: sp.startGame,
+  };
+}
+
+export function Game({ mode }: GameProps) {
   const {
-    gameState, turnPhase, error,
+    gameState, turnPhase, error, myPlayerIndex, turnTimer,
     doTakeTokens, doPurchaseCard, doReserveCard, doReserveCardFromDeck,
     doDiscardTokens, undoAction, confirmTurn, clearError,
     startGame, resetGame,
-  } = useGameStore();
+  } = useGameActions(mode);
 
   const [uiMode, setUIMode] = useState<UIMode>('idle');
   const [selectedTokens, setSelectedTokens] = useState<Partial<Record<GemColor, number>>>({});
@@ -24,10 +74,11 @@ export function Game() {
 
   if (!gameState) return null;
 
-  const myPlayer = gameState.players[0];
-  const aiPlayer = gameState.players[1];
-  const isMyTurn = gameState.currentPlayerIndex === 0 && gameState.phase === 'playing';
+  const myPlayer = gameState.players[myPlayerIndex];
+  const opponents = gameState.players.filter((_, i) => i !== myPlayerIndex);
+  const isMyTurn = gameState.currentPlayerIndex === myPlayerIndex && gameState.phase === 'playing';
   const boardDisabled = !isMyTurn || turnPhase !== 'idle';
+  const currentTurnPlayer = gameState.players[gameState.currentPlayerIndex];
 
   // ─── 토큰 선택 ──────────────────────
 
@@ -41,12 +92,10 @@ export function Game() {
       const totalSelected = Object.values(current).reduce((s, n) => s + (n ?? 0), 0);
       const colorsUsed = Object.entries(current).filter(([, n]) => (n ?? 0) > 0).map(([c]) => c);
 
-      // 같은 색 두 번째 클릭 → 2개로 (풀에 4개 이상일 때)
       if (currentCount === 1 && colorsUsed.length === 1 && gameState.tokens[color] >= 4) {
         return { [color]: 2 };
       }
 
-      // 이미 선택된 색 다시 클릭 → 해제
       if (currentCount > 0) {
         delete current[color];
         if (Object.values(current).every(n => (n ?? 0) === 0)) {
@@ -55,12 +104,10 @@ export function Game() {
         return current;
       }
 
-      // 이미 같은 색 2개 선택 중이면 리셋
       if (colorsUsed.length === 1 && (current[colorsUsed[0] as GemColor] ?? 0) === 2) {
         return { [color]: 1 };
       }
 
-      // 3개 이상이면 더 못 넣음
       if (totalSelected >= 3) return current;
 
       return { ...current, [color]: 1 };
@@ -163,32 +210,72 @@ export function Game() {
 
   const totalDiscarding = Object.values(discardSelection).reduce((s, n) => s + (n ?? 0), 0);
   const tokensToDiscard = getTotalTokenCount(myPlayer) - 10;
+  const playerCount = gameState.players.length;
+  const layoutClass = playerCount <= 2 ? 'layout-2p' : playerCount === 3 ? 'layout-3p' : 'layout-4p';
+
+  const isMultiSeat = playerCount >= 3;
+
+  const opponentPanel = (player: typeof opponents[number]) => (
+    <PlayerPanel
+      key={player.id}
+      player={player}
+      isOpponent
+      compact={isMultiSeat}
+      isCurrentTurn={gameState.currentPlayerIndex === gameState.players.indexOf(player)}
+    />
+  );
+
+  const boardElement = (
+    <Board
+      gameState={gameState}
+      onCardClick={(card) => handleCardClick(card, 'visible')}
+      onDeckClick={handleDeckReserve}
+      selectedTokens={uiMode === 'selectingTokens' ? selectedTokens : undefined}
+      onTokenClick={handleTokenClick}
+      disabled={boardDisabled}
+    />
+  );
+
+  const myPanel = (
+    <PlayerPanel
+      player={myPlayer}
+      compact={isMultiSeat}
+      isCurrentTurn={gameState.currentPlayerIndex === myPlayerIndex}
+      onReservedCardClick={(card) => handleCardClick(card, 'reserved')}
+    />
+  );
 
   return (
-    <div className="game">
-      {/* AI 패널 */}
-      <PlayerPanel
-        player={aiPlayer}
-        isOpponent
-        isCurrentTurn={gameState.currentPlayerIndex === 1}
-      />
+    <div className={`game ${layoutClass}`}>
+      {/* 2인: 기존 레이아웃 */}
+      {playerCount <= 2 && (
+        <>
+          {opponents[0] && opponentPanel(opponents[0])}
+          {boardElement}
+          {myPanel}
+        </>
+      )}
 
-      {/* 보드 */}
-      <Board
-        gameState={gameState}
-        onCardClick={(card) => handleCardClick(card, 'visible')}
-        onDeckClick={handleDeckReserve}
-        selectedTokens={uiMode === 'selectingTokens' ? selectedTokens : undefined}
-        onTokenClick={handleTokenClick}
-        disabled={boardDisabled}
-      />
+      {/* 3인: 상단 + 좌측 + 보드 + 하단 */}
+      {playerCount === 3 && (
+        <>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0])}</div>
+          <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
+          <div className="seat-center">{boardElement}</div>
+          <div className="seat-bottom">{myPanel}</div>
+        </>
+      )}
 
-      {/* 내 패널 */}
-      <PlayerPanel
-        player={myPlayer}
-        isCurrentTurn={gameState.currentPlayerIndex === 0}
-        onReservedCardClick={(card) => handleCardClick(card, 'reserved')}
-      />
+      {/* 4인: 상단 + 좌측 + 보드 + 우측 + 하단 */}
+      {playerCount === 4 && (
+        <>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0])}</div>
+          <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
+          <div className="seat-center">{boardElement}</div>
+          <div className="seat-right">{opponents[2] && opponentPanel(opponents[2])}</div>
+          <div className="seat-bottom">{myPanel}</div>
+        </>
+      )}
 
       {/* 에러 메시지 */}
       {error && (
@@ -294,9 +381,16 @@ export function Game() {
         </div>
       )}
 
-      {/* AI 턴 표시 */}
-      {isMyTurn === false && gameState.phase === 'playing' && (
-        <div className="action-bar ai-bar">AI가 생각 중...</div>
+      {/* 상대 턴 표시 + 카운트다운 */}
+      {!isMyTurn && gameState.phase === 'playing' && (
+        <div className={`action-bar ai-bar ${turnTimer ? 'has-timer' : ''}`}>
+          {mode === 'singleplayer'
+            ? 'AI가 생각 중...'
+            : turnTimer
+              ? <><span className="turn-timer-count">{turnTimer.remainingSeconds}초</span> {turnTimer.playerName}의 턴 — 연결 끊김, 자동 스킵 대기</>
+              : `${currentTurnPlayer.name}의 턴 — 대기 중...`
+          }
+        </div>
       )}
 
       {/* 게임 종료 */}
@@ -305,19 +399,24 @@ export function Game() {
           <div className="modal game-over">
             <div className="modal-title">게임 종료!</div>
             <div className="winner-name">
-              {gameState.winner.id === 'player-0' ? '승리!' : 'AI 승리...'}
+              {gameState.winner.id === myPlayer.id
+                ? '승리!'
+                : `${gameState.winner.name} 승리`
+              }
             </div>
             <div className="winner-score">
               최종 점수: {gameState.players.map(p =>
-                `${p.name} ${p.cards.reduce((s, c) => s + c.points, 0) + p.nobles.reduce((s, n) => s + n.points, 0)}점`
+                `${p.name} ${getPlayerScore(p)}점`
               ).join(' / ')}
             </div>
             <div className="modal-actions">
-              <button className="btn btn-confirm" onClick={() => startGame(myPlayer.name)}>
-                다시하기
-              </button>
+              {mode === 'singleplayer' && startGame && (
+                <button className="btn btn-confirm" onClick={() => startGame(myPlayer.name)}>
+                  다시하기
+                </button>
+              )}
               <button className="btn btn-cancel" onClick={resetGame}>
-                처음으로
+                {mode === 'singleplayer' ? '처음으로' : '나가기'}
               </button>
             </div>
           </div>

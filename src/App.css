@@ -69,15 +69,56 @@ body {
 /* ─── 게임 레이아웃 ──────────────────── */
 
 .game {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   padding: 16px;
   gap: 12px;
-  max-width: 1100px;
   margin: 0 auto;
   position: relative;
 }
+
+/* 2인: 기존 세로 레이아웃 */
+.game.layout-2p {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 1100px;
+}
+
+/* 3인: 상단 + (좌측 | 보드) + 하단 */
+.game.layout-3p {
+  display: grid;
+  grid-template-areas:
+    "top    top"
+    "left   center"
+    "bottom bottom";
+  grid-template-columns: 200px 1fr;
+  grid-template-rows: auto 1fr auto;
+  max-width: 1200px;
+  align-items: start;
+}
+
+.game.layout-3p .seat-top    { grid-area: top;    justify-self: center; }
+.game.layout-3p .seat-left   { grid-area: left; }
+.game.layout-3p .seat-center { grid-area: center; min-width: 0; }
+.game.layout-3p .seat-bottom { grid-area: bottom; justify-self: center; }
+
+/* 4인: 상단 + (좌측 | 보드 | 우측) + 하단 */
+.game.layout-4p {
+  display: grid;
+  grid-template-areas:
+    ".      top    ."
+    "left   center right"
+    "bottom bottom bottom";
+  grid-template-columns: 200px 1fr 200px;
+  grid-template-rows: auto 1fr auto;
+  max-width: 1400px;
+  align-items: start;
+}
+
+.game.layout-4p .seat-top    { grid-area: top;    justify-self: center; }
+.game.layout-4p .seat-left   { grid-area: left; }
+.game.layout-4p .seat-center { grid-area: center; min-width: 0; }
+.game.layout-4p .seat-right  { grid-area: right; }
+.game.layout-4p .seat-bottom { grid-area: bottom; justify-self: center; }
 
 /* ─── 보드 ───────────────────────────── */
 
@@ -324,6 +365,31 @@ body {
 .player-panel.current-turn { border-color: #f0c040; }
 .player-panel.opponent { opacity: 0.85; }
 
+/* ─── compact 패널 (3/4인 모드 전체 적용) ─── */
+
+.player-panel.compact {
+  width: 200px;
+  padding: 10px;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.player-panel.compact .player-name { font-size: 0.85rem; }
+.player-panel.compact .player-score { font-size: 0.95rem; }
+
+.player-panel.compact .player-tokens { gap: 3px; }
+.player-panel.compact .token-mini { width: 24px; height: 24px; font-size: 0.7rem; }
+.player-panel.compact .token-total { font-size: 0.7rem; }
+
+.player-panel.compact .owned-card-mini { width: 22px; height: 28px; font-size: 0.7rem; }
+.player-panel.compact .bonus-badge { font-size: 0.65rem; padding: 1px 4px; }
+
+.player-panel.compact .reserved-card-mini,
+.player-panel.compact .reserved-card-back { width: 32px; height: 42px; font-size: 0.65rem; }
+
+.player-panel.compact .section-label { font-size: 0.65rem; }
+.player-panel.compact .noble-mini { font-size: 0.7rem; padding: 1px 6px; }
+
 .player-header {
   display: flex;
   justify-content: space-between;
@@ -488,6 +554,16 @@ body {
 }
 
 .ai-bar { color: #888; font-style: italic; }
+.ai-bar.has-timer { color: #FF9800; font-style: normal; }
+
+.turn-timer-count {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #F44336;
+  min-width: 36px;
+  display: inline-block;
+  text-align: center;
+}
 
 /* ─── 모달 ───────────────────────────── */
 
@@ -596,3 +672,129 @@ body {
 
 /* 하단 액션바 공간 확보 */
 .game { padding-bottom: 60px; }
+
+/* ─── 모드 선택 ─────────────────────── */
+
+.mode-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.btn-multiplayer {
+  background: #5C6BC0;
+  color: #fff;
+  padding: 10px 24px;
+  font-size: 1rem;
+}
+
+/* ─── 로비 메뉴 ─────────────────────── */
+
+.lobby-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 240px;
+  align-items: stretch;
+}
+
+.room-code-input {
+  text-align: center;
+  font-size: 1.3rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+/* ─── 로비 ──────────────────────────── */
+
+.lobby-code-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 12px 0;
+}
+
+.lobby-code-label {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.lobby-code {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: #f0c040;
+}
+
+.lobby-copy-btn {
+  font-size: 0.8rem;
+  padding: 4px 12px;
+}
+
+.lobby-players {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.lobby-section-title {
+  font-size: 0.8rem;
+  color: #888;
+  border-bottom: 1px solid #333;
+  padding-bottom: 4px;
+}
+
+.lobby-player {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #2a2a3e;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.lobby-player.ready { border-color: #4CAF50; }
+
+.lobby-player-name {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lobby-host-badge {
+  font-size: 0.65rem;
+  background: #f0c040;
+  color: #1a1a2e;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.lobby-player-status {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.lobby-player-status.ready { color: #4CAF50; }
+
+.lobby-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.lobby-error {
+  background: #C62828;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin: 4px 0;
+}
