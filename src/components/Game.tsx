@@ -9,6 +9,30 @@ import { GEM_STYLE, TOKEN_STYLE, GEM_COLORS } from '../utils/gemColors';
 
 type UIMode = 'idle' | 'selectingTokens' | 'cardAction' | 'discarding';
 
+function DebugOverlay({ turnPhase, uiMode, currentPlayerIndex, myPlayerIndex, phase, isMyTurn, boardDisabled, playerNames }: {
+  turnPhase: string; uiMode: string; currentPlayerIndex: number; myPlayerIndex: number;
+  phase: string; isMyTurn: boolean; boardDisabled: boolean; playerNames: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="debug-overlay" onClick={() => setOpen(!open)}>
+      {open ? (
+        <>
+          <div>phase: {phase}</div>
+          <div>turnPhase: {turnPhase}</div>
+          <div>uiMode: {uiMode}</div>
+          <div>current: [{currentPlayerIndex}] {playerNames[currentPlayerIndex]}</div>
+          <div>me: [{myPlayerIndex}] {playerNames[myPlayerIndex]}</div>
+          <div>isMyTurn: {String(isMyTurn)}</div>
+          <div>boardDisabled: {String(boardDisabled)}</div>
+        </>
+      ) : (
+        <span>DBG</span>
+      )}
+    </div>
+  );
+}
+
 interface GameProps {
   mode: 'singleplayer' | 'multiplayer';
 }
@@ -420,6 +444,20 @@ export function Game({ mode }: GameProps) {
       )}
 
       {/* 게임 종료 */}
+      {/* 디버그 오버레이 */}
+      {mode === 'multiplayer' && (
+        <DebugOverlay
+          turnPhase={turnPhase}
+          uiMode={uiMode}
+          currentPlayerIndex={gameState.currentPlayerIndex}
+          myPlayerIndex={myPlayerIndex}
+          phase={gameState.phase}
+          isMyTurn={isMyTurn}
+          boardDisabled={boardDisabled}
+          playerNames={gameState.players.map(p => p.name)}
+        />
+      )}
+
       {gameState.phase === 'ended' && gameState.winner && (
         <div className="modal-overlay">
           <div className="modal game-over">

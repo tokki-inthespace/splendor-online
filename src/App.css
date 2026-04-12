@@ -689,6 +689,25 @@ body {
 /* 하단 액션바 공간 확보 */
 .game { padding-bottom: 60px; }
 
+/* ─── 디버그 오버레이 ───────────────── */
+
+.debug-overlay {
+  position: fixed;
+  bottom: 64px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #8f8;
+  font-family: monospace;
+  font-size: 0.65rem;
+  line-height: 1.4;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 50;
+  user-select: none;
+  max-width: 220px;
+}
+
 /* ─── 모드 선택 ─────────────────────── */
 
 .mode-buttons {
