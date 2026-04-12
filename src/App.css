@@ -378,6 +378,7 @@ body {
 .player-panel.compact .player-score { font-size: 0.95rem; }
 
 .player-panel.compact .player-tokens { gap: 3px; }
+.player-panel.compact .player-token-grid { gap: 3px; }
 .player-panel.compact .token-mini { width: 24px; height: 24px; font-size: 0.7rem; }
 .player-panel.compact .token-total { font-size: 0.7rem; }
 
@@ -401,11 +402,26 @@ body {
 
 .player-tokens { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 
+.player-token-grid {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.token-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
 .token-total {
   font-size: 0.8rem;
   font-weight: 600;
   color: #888;
   margin-left: 4px;
+  align-self: center;
 }
 
 .token-total.at-limit { color: #F44336; }
