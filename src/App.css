@@ -1082,12 +1082,67 @@ body {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.noble-tile:has(.noble-art) .noble-points,
+/* 일러스트 있을 때 — 보드게임 카드 스타일 (점수 뱃지 좌상단 + 요구량 하단 스트립) */
+.noble-tile:has(.noble-art) {
+  display: block;
+  padding: 0;
+  width: 100%;
+  height: 100px;
+  overflow: hidden;
+  border-width: 2px;
+}
+
+.noble-tile:has(.noble-art) .noble-points {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  min-width: 0;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.95);
+  color: #1a1a1a;
+  font-weight: 800;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(184, 134, 11, 0.9);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
 .noble-tile:has(.noble-art) .noble-req {
-  background: rgba(20, 20, 30, 0.7);
-  padding: 2px 5px;
-  border-radius: 4px;
-  backdrop-filter: blur(2px);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  padding: 4px 4px 5px;
+  background: linear-gradient(to top, rgba(15, 15, 25, 0.92), rgba(15, 15, 25, 0.3));
+  backdrop-filter: blur(3px);
+  flex-wrap: wrap;
+}
+
+.noble-tile:has(.noble-art) .noble-req-item {
+  font-size: 0.72rem;
+  gap: 3px;
+}
+
+.noble-tile:has(.noble-art) .noble-dot {
+  width: 12px;
+  height: 12px;
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+}
+
+.noble-tile:has(.noble-art) .noble-num {
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95);
 }
 
 .deck-slot:has(.card-back-art) .deck-level,
