@@ -22,7 +22,7 @@ export function CardSlot({ card, onClick, disabled, highlight }: Props) {
       <div className="card-header" style={{ backgroundColor: style.bg, color: style.text }}>
         <span className="card-points">{card.points > 0 ? card.points : ''}</span>
       </div>
-      <div className="card-cost">
+      <div className={`card-cost${costs.length >= 4 ? ' card-cost--grid' : ''}`}>
         {costs.map(color => (
           <span key={color} className="cost-item">
             <span className="cost-dot" style={{ backgroundColor: GEM_STYLE[color].bg }} />
