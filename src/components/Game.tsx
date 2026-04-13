@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Card, GemColor } from '../types/game';
+import type { EmoteId } from '../protocol';
+import { EMOTE_IDS, EMOTE_MAP } from '../protocol';
 import { canAffordCard, getTotalTokenCount, getPlayerScore } from '../game/gameLogic';
 import { useGameStore } from '../store/gameStore';
 import { useMultiplayerStore } from '../store/multiplayerStore';
@@ -8,6 +10,73 @@ import { PlayerPanel } from './Player/PlayerPanel';
 import { GEM_STYLE, TOKEN_STYLE, GEM_COLORS } from '../utils/gemColors';
 
 type UIMode = 'idle' | 'selectingTokens' | 'cardAction' | 'discarding';
+
+function EmotePicker({ onSelect, cooldownUntil }: {
+  onSelect: (emoteId: EmoteId) => void;
+  cooldownUntil: number;
+}) {
+  const [open, setOpen] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // 쿨다운 중이면 1초 간격으로 리렌더 (남은 초 업데이트)
+  useEffect(() => {
+    if (now >= cooldownUntil) return;
+    const timer = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(timer);
+  }, [now, cooldownUntil]);
+
+  // 외부 클릭 시 팝오버 닫기
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    // 트리거 클릭과 같은 이벤트 루프에서 바로 닫히지 않도록 다음 틱에 바인딩
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClick);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('mousedown', handleClick);
+    };
+  }, [open]);
+
+  const remainingMs = Math.max(0, cooldownUntil - now);
+  const onCooldown = remainingMs > 0;
+  const remainingSec = Math.ceil(remainingMs / 1000);
+
+  return (
+    <div className="emote-picker" ref={rootRef}>
+      {open && (
+        <div className="emote-picker-panel">
+          {EMOTE_IDS.map((id) => (
+            <button
+              key={id}
+              className="emote-picker-item"
+              onClick={() => {
+                onSelect(id);
+                setOpen(false);
+              }}
+              disabled={onCooldown}
+            >
+              {EMOTE_MAP[id]}
+            </button>
+          ))}
+        </div>
+      )}
+      <button
+        className={`emote-picker-trigger ${onCooldown ? 'cooldown' : ''}`}
+        onClick={() => setOpen((v) => !v)}
+        title={onCooldown ? `${remainingSec}초 후 사용 가능` : '이모트'}
+      >
+        {onCooldown ? remainingSec : '😀'}
+      </button>
+    </div>
+  );
+}
 
 function DebugOverlay({ turnPhase, uiMode, currentPlayerIndex, myPlayerIndex, phase, isMyTurn, boardDisabled, playerNames }: {
   turnPhase: string; uiMode: string; currentPlayerIndex: number; myPlayerIndex: number;
@@ -51,6 +120,8 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
       isSpectator: mp.isSpectator,
       spectators: mp.roomInfo?.spectators ?? [],
       turnTimer: mp.turnTimer,
+      activeEmotes: mp.activeEmotes,
+      myEmoteCooldownUntil: mp.myEmoteCooldownUntil,
       doTakeTokens: mp.doTakeTokens,
       doPurchaseCard: mp.doPurchaseCard,
       doReserveCard: mp.doReserveCard,
@@ -58,6 +129,7 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
       doDiscardTokens: mp.doDiscardTokens,
       undoAction: mp.undoAction,
       confirmTurn: mp.confirmTurn,
+      sendEmote: mp.sendEmote,
       clearError: mp.clearError,
       resetGame: mp.resetGame,
       startGame: undefined as undefined | ((name: string) => void),
@@ -73,6 +145,8 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
     isSpectator: false,
     spectators: [] as string[],
     turnTimer: null as { remainingSeconds: number; playerName: string; playerIndex: number } | null,
+    activeEmotes: {} as Record<number, { emoteId: EmoteId; timestamp: number }>,
+    myEmoteCooldownUntil: 0,
     doTakeTokens: sp.doTakeTokens,
     doPurchaseCard: sp.doPurchaseCard,
     doReserveCard: sp.doReserveCard,
@@ -80,6 +154,7 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
     doDiscardTokens: sp.doDiscardTokens,
     undoAction: sp.undoAction,
     confirmTurn: sp.confirmTurn,
+    sendEmote: (_emoteId: EmoteId) => { /* no-op in singleplayer */ },
     clearError: sp.clearError,
     resetGame: sp.resetGame,
     startGame: sp.startGame,
@@ -89,6 +164,7 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
 export function Game({ mode }: GameProps) {
   const {
     gameState, turnPhase, error, myPlayerIndex, isSpectator, spectators, turnTimer,
+    activeEmotes, myEmoteCooldownUntil, sendEmote,
     doTakeTokens, doPurchaseCard, doReserveCard, doReserveCardFromDeck,
     doDiscardTokens, undoAction, confirmTurn, clearError,
     startGame, resetGame,
@@ -266,15 +342,20 @@ export function Game({ mode }: GameProps) {
 
   const isMultiSeat = playerCount >= 3;
 
-  const opponentPanel = (player: typeof opponents[number]) => (
-    <PlayerPanel
-      key={player.id}
-      player={player}
-      isOpponent={!isSpectator}
-      compact={isMultiSeat}
-      isCurrentTurn={gameState.currentPlayerIndex === gameState.players.indexOf(player)}
-    />
-  );
+  const opponentPanel = (player: typeof opponents[number], emotePosition: 'top' | 'side' = 'top') => {
+    const idx = gameState.players.indexOf(player);
+    return (
+      <PlayerPanel
+        key={player.id}
+        player={player}
+        isOpponent={!isSpectator}
+        compact={isMultiSeat}
+        isCurrentTurn={gameState.currentPlayerIndex === idx}
+        activeEmote={activeEmotes[idx]?.emoteId ?? null}
+        emotePosition={emotePosition}
+      />
+    );
+  };
 
   const boardElement = (
     <Board
@@ -294,6 +375,7 @@ export function Game({ mode }: GameProps) {
       isCurrentTurn={gameState.currentPlayerIndex === myPlayerIndex}
       onReservedCardClick={(card) => handleCardClick(card, 'reserved')}
       hiddenCardIds={pendingReservedIds}
+      activeEmote={activeEmotes[myPlayerIndex]?.emoteId ?? null}
     />
   ) : null;
 
@@ -312,7 +394,7 @@ export function Game({ mode }: GameProps) {
       {/* 2인: 기존 레이아웃 */}
       {playerCount <= 2 && !isSpectator && (
         <>
-          {opponents[0] && opponentPanel(opponents[0])}
+          {opponents[0] && opponentPanel(opponents[0], 'side')}
           {boardElement}
           {myPanel}
         </>
@@ -321,7 +403,7 @@ export function Game({ mode }: GameProps) {
       {/* 2인 관전 */}
       {playerCount <= 2 && isSpectator && (
         <>
-          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0])}</div>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side')}</div>
           <div className="seat-center">{boardElement}</div>
           <div className="seat-bottom">{opponents[1] && opponentPanel(opponents[1])}</div>
         </>
@@ -330,7 +412,7 @@ export function Game({ mode }: GameProps) {
       {/* 3인: 상단 + 좌측 + 보드 + 하단 */}
       {playerCount === 3 && !isSpectator && (
         <>
-          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0])}</div>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side')}</div>
           <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
           <div className="seat-center">{boardElement}</div>
           <div className="seat-bottom">{myPanel}</div>
@@ -340,7 +422,7 @@ export function Game({ mode }: GameProps) {
       {/* 3인 관전 */}
       {playerCount === 3 && isSpectator && (
         <>
-          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0])}</div>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side')}</div>
           <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
           <div className="seat-center">{boardElement}</div>
           <div className="seat-bottom">{opponents[2] && opponentPanel(opponents[2])}</div>
@@ -350,7 +432,7 @@ export function Game({ mode }: GameProps) {
       {/* 4인: 상단 + 좌측 + 보드 + 우측 + 하단 */}
       {playerCount === 4 && !isSpectator && (
         <>
-          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0])}</div>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side')}</div>
           <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
           <div className="seat-center">{boardElement}</div>
           <div className="seat-right">{opponents[2] && opponentPanel(opponents[2])}</div>
@@ -361,7 +443,7 @@ export function Game({ mode }: GameProps) {
       {/* 4인 관전 */}
       {playerCount === 4 && isSpectator && (
         <>
-          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0])}</div>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side')}</div>
           <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
           <div className="seat-center">{boardElement}</div>
           <div className="seat-right">{opponents[2] && opponentPanel(opponents[2])}</div>
@@ -489,6 +571,11 @@ export function Game({ mode }: GameProps) {
                 : `${currentTurnPlayer.name}의 턴 — 대기 중...`
           }
         </div>
+      )}
+
+      {/* 이모트 피커 (멀티플레이 + 플레이어 + 게임 진행 중) */}
+      {mode === 'multiplayer' && !isSpectator && gameState.phase === 'playing' && (
+        <EmotePicker onSelect={sendEmote} cooldownUntil={myEmoteCooldownUntil} />
       )}
 
       {/* 게임 종료 */}

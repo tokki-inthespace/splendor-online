@@ -1,5 +1,5 @@
 import type { Server, Socket } from 'socket.io';
-import type { ClientEvents, ServerEvents } from '../src/protocol.js';
+import type { ClientEvents, EmoteId, ServerEvents } from '../src/protocol.js';
 import { GameRoom } from './GameRoom.js';
 
 type IOServer = Server<ClientEvents, ServerEvents>;
@@ -129,6 +129,23 @@ export class RoomManager {
     socket.on('game:discardTokens', ({ tokens }) => this.handleGameAction(socket, room => room.handleDiscardTokens(socket.data.playerIndex, tokens)));
     socket.on('game:undoAction', () => this.handleGameAction(socket, room => room.handleUndoAction(socket.data.playerIndex)));
     socket.on('game:confirmTurn', () => this.handleGameAction(socket, room => room.handleConfirmTurn(socket.data.playerIndex)));
+    socket.on('player:emote', ({ emoteId }) => this.handleEmote(socket, emoteId));
+  }
+
+  private handleEmote(socket: IOSocket, emoteId: EmoteId): void {
+    const { roomCode, playerIndex } = socket.data ?? {};
+    if (!roomCode || playerIndex === undefined || playerIndex === null) return;
+    if (playerIndex === -1) return; // 관전자는 이모트 불가
+
+    const room = this.rooms.get(roomCode);
+    if (!room) return;
+
+    const error = room.handleEmote(playerIndex, emoteId);
+    if (error) return; // 쿨다운/검증 실패는 조용히 무시
+
+    // 방 안의 모든 사람에게 브로드캐스트 (플레이어 + 관전자)
+    // 관전자는 sendEmote는 못 하지만 다른 플레이어의 이모트는 볼 수 있음
+    this.io.to(this.socketRoom(roomCode)).emit('player:emote', { playerIndex, emoteId });
   }
 
   /** sessionId로 기존 세션 복구 시도. 성공하면 true 반환. */

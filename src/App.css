@@ -124,7 +124,7 @@ body {
 
 .game.layout-3p .seat-top    { grid-area: top;    justify-self: center; }
 .game.layout-3p .seat-left   { grid-area: left; }
-.game.layout-3p .seat-center { grid-area: center; min-width: 0; }
+.game.layout-3p .seat-center { grid-area: center; min-width: 650px; }
 .game.layout-3p .seat-bottom { grid-area: bottom; justify-self: center; }
 
 /* 4인: 상단 + (좌측 | 보드 | 우측) + 하단 */
@@ -142,7 +142,7 @@ body {
 
 .game.layout-4p .seat-top    { grid-area: top;    justify-self: center; }
 .game.layout-4p .seat-left   { grid-area: left; }
-.game.layout-4p .seat-center { grid-area: center; min-width: 0; }
+.game.layout-4p .seat-center { grid-area: center; min-width: 650px; }
 .game.layout-4p .seat-right  { grid-area: right; }
 .game.layout-4p .seat-bottom { grid-area: bottom; justify-self: center; }
 
@@ -262,6 +262,7 @@ body {
 
 .card-slot {
   flex: 1;
+  min-width: 100px;
   min-height: 110px;
   border: 2px solid #444;
   border-radius: 8px;
@@ -386,6 +387,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  position: relative;
 }
 
 .player-panel.current-turn { border-color: #f0c040; }
@@ -874,4 +876,158 @@ body {
   font-size: 0.85rem;
   cursor: pointer;
   margin: 4px 0;
+}
+
+/* ─── 이모트 말풍선 + 피커 ────────────────── */
+
+.emote-bubble {
+  position: absolute;
+  background: #fff;
+  color: #111;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  line-height: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 20;
+  pointer-events: none;
+  animation: emote-pop 3s ease-out forwards;
+}
+
+/* 기본: 패널 위쪽 바깥 (꼬리는 아래를 향함) */
+.emote-bubble--top {
+  top: -44px;
+  right: 8px;
+}
+
+.emote-bubble--top::after {
+  content: '';
+  position: absolute;
+  bottom: -7px; /* 본체와 2px 겹치게 (서브픽셀 갭 방지) */
+  right: 14px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 10px solid #fff;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.25));
+}
+
+/* 상단 플레이어: 패널 우측 바깥 (꼬리는 왼쪽을 향함) */
+.emote-bubble--side {
+  top: 8px;
+  left: calc(100% + 12px);
+}
+
+.emote-bubble--side::after {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: -7px; /* 본체와 2px 겹치게 (서브픽셀 갭 방지) */
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 10px solid #fff;
+  filter: drop-shadow(-3px 0 2px rgba(0, 0, 0, 0.25));
+}
+
+@keyframes emote-pop {
+  0%   { opacity: 0; transform: scale(0.4) translateY(8px); }
+  12%  { opacity: 1; transform: scale(1.1) translateY(0); }
+  20%  { transform: scale(1) translateY(0); }
+  85%  { opacity: 1; transform: scale(1) translateY(0); }
+  100% { opacity: 0; transform: scale(0.9) translateY(-4px); }
+}
+
+.player-panel.compact .emote-bubble {
+  min-width: 32px;
+  height: 32px;
+  font-size: 1.15rem;
+  padding: 0 8px;
+}
+
+.player-panel.compact .emote-bubble--top {
+  top: -36px;
+  right: 6px;
+}
+
+.player-panel.compact .emote-bubble--side {
+  top: 6px;
+  left: calc(100% + 8px);
+}
+
+.emote-picker {
+  position: fixed;
+  bottom: 80px;
+  left: 12px;
+  z-index: 15; /* modal-overlay(20)보다 낮게 — 모달 뒤로 가도록 */
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.emote-picker-trigger {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: #2a2a4a;
+  color: #fff;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, background 0.15s;
+}
+
+.emote-picker-trigger:hover { background: #3a3a5f; transform: scale(1.05); }
+.emote-picker-trigger.cooldown {
+  background: #444;
+  color: #aaa;
+  font-size: 0.95rem;
+  cursor: default;
+}
+.emote-picker-trigger.cooldown:hover { transform: none; background: #444; }
+
+.emote-picker-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(20, 20, 40, 0.95);
+  border: 1px solid #333;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.emote-picker-item {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: none;
+  background: #2a2a4a;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.1s;
+}
+
+.emote-picker-item:hover:not(:disabled) {
+  background: #3a3a5f;
+  transform: scale(1.08);
+}
+
+.emote-picker-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

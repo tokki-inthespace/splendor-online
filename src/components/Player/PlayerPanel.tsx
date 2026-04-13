@@ -1,4 +1,6 @@
 import type { Player, Card, GemColor } from '../../types/game';
+import type { EmoteId } from '../../protocol';
+import { EMOTE_MAP } from '../../protocol';
 import { GEM_STYLE, TOKEN_STYLE, GEM_COLORS } from '../../utils/gemColors';
 import { getPlayerBonuses, getPlayerScore, getTotalTokenCount } from '../../game/gameLogic';
 
@@ -17,15 +19,21 @@ interface Props {
   compact?: boolean;
   onReservedCardClick?: (card: Card) => void;
   hiddenCardIds?: Set<string>;
+  activeEmote?: EmoteId | null;
+  /** 이모트 말풍선 위치: 'top' = 패널 위쪽 바깥, 'side' = 패널 우측 바깥 (상단 플레이어용) */
+  emotePosition?: 'top' | 'side';
 }
 
-export function PlayerPanel({ player, isOpponent, isCurrentTurn, compact, onReservedCardClick, hiddenCardIds }: Props) {
+export function PlayerPanel({ player, isOpponent, isCurrentTurn, compact, onReservedCardClick, hiddenCardIds, activeEmote, emotePosition = 'top' }: Props) {
   const score = getPlayerScore(player);
   const bonuses = getPlayerBonuses(player);
   const totalTokens = getTotalTokenCount(player);
 
   return (
     <div className={`player-panel ${isOpponent ? 'opponent' : 'self'} ${isCurrentTurn ? 'current-turn' : ''} ${compact ? 'compact' : ''}`}>
+      {activeEmote && (
+        <div className={`emote-bubble emote-bubble--${emotePosition}`}>{EMOTE_MAP[activeEmote]}</div>
+      )}
       <div className="player-header">
         <span className="player-name">{player.name}</span>
         <span className="player-score">{score}점</span>

@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import type { Card, GameState, GemMap, TokenMap } from '../src/types/game';
-import type { RoomInfo, RoomPlayer, TurnPhase } from '../src/protocol';
+import type { EmoteId, RoomInfo, RoomPlayer, TurnPhase } from '../src/protocol';
+import { EMOTE_COOLDOWN_MS, EMOTE_IDS } from '../src/protocol.js';
 import {
   initGame,
   takeTokens,
@@ -43,6 +44,9 @@ export class GameRoom {
   abandonedPlayers = new Set<number>(); // 퇴장 처리된 플레이어 인덱스
   static readonly MAX_SKIPS = 3;
   static readonly TURN_TIMEOUT_SECONDS = 60;
+
+  // 이모트 쿨다운 (플레이어별 마지막 이모트 시각)
+  emoteCooldowns = new Map<number, number>();
 
   // 방 정리용 타임스탬프
   lastActivityAt: number = Date.now();
@@ -360,6 +364,17 @@ export class GameRoom {
 
   isAbandoned(playerIndex: number): boolean {
     return this.abandonedPlayers.has(playerIndex);
+  }
+
+  /** 이모트 전송 가능 여부 체크. 가능하면 쿨다운 갱신 후 null, 불가하면 에러 메시지 반환. */
+  handleEmote(playerIndex: number, emoteId: EmoteId): string | null {
+    if (this.status !== 'playing') return '게임 중이 아닙니다';
+    if (!(EMOTE_IDS as readonly string[]).includes(emoteId)) return '유효하지 않은 이모트';
+    const now = Date.now();
+    const last = this.emoteCooldowns.get(playerIndex) ?? 0;
+    if (now - last < EMOTE_COOLDOWN_MS) return '쿨다운 중입니다';
+    this.emoteCooldowns.set(playerIndex, now);
+    return null;
   }
 
   /** 2인 게임에서 상대가 나갔을 때: 즉시 게임 종료, 남은 플레이어 승리 */

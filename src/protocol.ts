@@ -3,6 +3,19 @@ import type { GameState, GemMap, TokenMap } from './types/game';
 // ─── 턴 단계 (서버/클라이언트 공유) ──────────────────────
 export type TurnPhase = 'idle' | 'action' | 'discarding';
 
+// ─── 이모트 (서버/클라이언트 공유) ────────────────────────
+export const EMOTE_IDS = ['thumbs_up', 'thumbs_down', 'smile', 'sleep', 'tear', 'angry'] as const;
+export type EmoteId = typeof EMOTE_IDS[number];
+export const EMOTE_MAP: Record<EmoteId, string> = {
+  thumbs_up: '👍',
+  thumbs_down: '👎',
+  smile: '😄',
+  sleep: '😴',
+  tear: '🥲',
+  angry: '😡',
+};
+export const EMOTE_COOLDOWN_MS = 3000;
+
 // ─── 방 정보 ─────────────────────────────────────────────
 export interface RoomPlayer {
   name: string;
@@ -34,6 +47,7 @@ export interface ClientEvents {
   'game:discardTokens': (payload: { tokens: Partial<TokenMap> }) => void;
   'game:confirmTurn': () => void;
   'game:undoAction': () => void;
+  'player:emote': (payload: { emoteId: EmoteId }) => void;
 }
 
 // ─── Server → Client 이벤트 ──────────────────────────────
@@ -71,4 +85,5 @@ export interface ServerEvents {
   'player:reconnected': (payload: { playerName: string; playerIndex: number }) => void;
   'turn:timer': (payload: { remainingSeconds: number; playerName: string; playerIndex: number }) => void;
   'player:abandoned': (payload: { playerName: string; playerIndex: number }) => void;
+  'player:emote': (payload: { playerIndex: number; emoteId: EmoteId }) => void;
 }

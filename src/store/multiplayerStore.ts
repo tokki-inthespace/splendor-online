@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { GameState, GemMap, TokenMap } from '../types/game';
-import type { RoomInfo, TurnPhase } from '../protocol';
+import type { EmoteId, RoomInfo, TurnPhase } from '../protocol';
+import { EMOTE_COOLDOWN_MS } from '../protocol';
 import { getSocket, disconnectSocket } from '../hooks/useSocket';
 
 const SESSION_KEY = 'splendor-session-id';
@@ -39,6 +40,11 @@ interface MultiplayerStore {
   // 턴 타이머
   turnTimer: { remainingSeconds: number; playerName: string; playerIndex: number } | null;
 
+  // 이모트 — 플레이어별 현재 표시 중인 이모트
+  activeEmotes: Record<number, { emoteId: EmoteId; timestamp: number }>;
+  // 내 이모트 쿨다운 종료 시각 (ms epoch)
+  myEmoteCooldownUntil: number;
+
   // 연결
   connect: () => void;
   disconnect: () => void;
@@ -62,6 +68,7 @@ interface MultiplayerStore {
   undoAction: () => void;
   confirmTurn: () => void;
   clearError: () => void;
+  sendEmote: (emoteId: EmoteId) => void;
 
   // 게임 리셋 (방 나가기)
   resetGame: () => void;
@@ -79,6 +86,8 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   error: null,
   isSpectator: false,
   turnTimer: null,
+  activeEmotes: {},
+  myEmoteCooldownUntil: 0,
 
   connect: () => {
     const savedSessionId = loadSessionId();
@@ -114,6 +123,8 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
           error: null,
           isSpectator: false,
           turnTimer: null,
+          activeEmotes: {},
+          myEmoteCooldownUntil: 0,
         });
         return;
       }
@@ -180,6 +191,8 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         error: null,
         isSpectator: false,
         turnTimer: null,
+        activeEmotes: {},
+        myEmoteCooldownUntil: 0,
       });
     });
 
@@ -223,6 +236,25 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       set({ logs: [...logs, `${playerName}이(가) 게임에서 퇴장되었습니다`] });
     });
 
+    socket.on('player:emote', ({ playerIndex, emoteId }) => {
+      const ts = Date.now();
+      set({
+        activeEmotes: {
+          ...get().activeEmotes,
+          [playerIndex]: { emoteId, timestamp: ts },
+        },
+      });
+      // 3초 후 자동 제거 (같은 플레이어가 새 이모트로 덮어썼으면 스킵)
+      setTimeout(() => {
+        const current = get().activeEmotes[playerIndex];
+        if (current && current.timestamp === ts) {
+          const next = { ...get().activeEmotes };
+          delete next[playerIndex];
+          set({ activeEmotes: next });
+        }
+      }, EMOTE_COOLDOWN_MS);
+    });
+
     // 재접속 최대 시도 초과 시 정리
     socket.io.on('reconnect_failed', () => {
       clearSessionId();
@@ -237,6 +269,8 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         error: null,
         isSpectator: false,
         turnTimer: null,
+        activeEmotes: {},
+        myEmoteCooldownUntil: 0,
       });
     });
 
@@ -258,6 +292,8 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       error: null,
       isSpectator: false,
       turnTimer: null,
+      activeEmotes: {},
+      myEmoteCooldownUntil: 0,
     });
   },
 
@@ -304,6 +340,8 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       error: null,
       isSpectator: false,
       turnTimer: null,
+      activeEmotes: {},
+      myEmoteCooldownUntil: 0,
     });
   },
 
@@ -336,6 +374,13 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
 
   confirmTurn: () => {
     getSocket().emit('game:confirmTurn');
+  },
+
+  sendEmote: (emoteId) => {
+    const now = Date.now();
+    if (now < get().myEmoteCooldownUntil) return;
+    set({ myEmoteCooldownUntil: now + EMOTE_COOLDOWN_MS });
+    getSocket().emit('player:emote', { emoteId });
   },
 
   clearError: () => set({ error: null }),
