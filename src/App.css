@@ -312,10 +312,6 @@ body {
 .cost-dot {
   width: 14px;
   height: 14px;
-  border-radius: 50%;
-  display: inline-block;
-  border: 1px solid rgba(255,255,255,0.2);
-  flex-shrink: 0;
 }
 
 .cost-num { font-weight: 600; }
@@ -351,7 +347,11 @@ body {
   font-weight: 700;
   font-size: 1.1rem;
   border: 2px solid rgba(255,255,255,0.15);
+  position: relative;
+  overflow: hidden;
 }
+.token-circle > .gem-icon { position: absolute; inset: 0; width: 100%; height: 100%; }
+.token-circle > .token-count { position: relative; z-index: 1; }
 
 .token-circle.small {
   width: 36px;
@@ -465,7 +465,11 @@ body {
   font-weight: 700;
   font-size: 0.8rem;
   border: 1px solid rgba(255,255,255,0.15);
+  position: relative;
+  overflow: hidden;
 }
+.token-mini > .gem-icon { position: absolute; inset: 0; width: 100%; height: 100%; }
+.token-mini > .token-count { position: relative; z-index: 1; }
 
 .player-cards {
   display: flex;
@@ -482,12 +486,14 @@ body {
 .bonus-badge {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  gap: 3px;
+  padding: 1px 6px 1px 2px;
+  border-radius: 10px;
+  font-size: 0.72rem;
   font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
 }
+.bonus-badge > .gem-icon { width: 14px; height: 14px; }
 
 .owned-cards {
   display: flex;
@@ -540,8 +546,6 @@ body {
 .mini-gem {
   width: 12px;
   height: 12px;
-  border-radius: 50%;
-  font-size: 0;
 }
 
 .reserved-card-back {
@@ -1031,6 +1035,28 @@ body {
 .emote-picker-item:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* ─── 보석 아이콘 (공통) ──────────────
+   manifest.gems에 등록된 색상은 /illustrations/gems/{color}.webp로,
+   없으면 색상 원형(fallback)으로 렌더. 크기는 호출부 CSS에서 지정. */
+.gem-icon {
+  display: inline-block;
+  position: relative;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.gem-icon--fallback {
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.gem-icon-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 /* ─── 카드/귀족/덱 일러스트 ──────────────

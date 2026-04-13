@@ -9,12 +9,14 @@ interface Manifest {
   cards: Set<string>;
   nobles: Set<string>;
   cardBacks: Set<string>;
+  gems: Set<string>;
 }
 
 let manifest: Manifest = {
   cards: new Set(),
   nobles: new Set(),
   cardBacks: new Set(),
+  gems: new Set(),
 };
 let loaded = false;
 const listeners = new Set<() => void>();
@@ -28,6 +30,7 @@ fetch('/illustrations/manifest.json')
         cards: new Set(data.cards ?? []),
         nobles: new Set(data.nobles ?? []),
         cardBacks: new Set(data.cardBacks ?? []),
+        gems: new Set(data.gems ?? []),
       };
     }
     loaded = true;
@@ -48,6 +51,10 @@ export function hasNobleArt(id: string): boolean {
 
 export function hasCardBackArt(level: 1 | 2 | 3): boolean {
   return manifest.cardBacks.has(`l${level}`);
+}
+
+export function hasGemArt(color: string): boolean {
+  return manifest.gems.has(color);
 }
 
 /**

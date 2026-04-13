@@ -1,7 +1,8 @@
 import type { Player, Card, GemColor } from '../../types/game';
 import type { EmoteId } from '../../protocol';
 import { EMOTE_MAP } from '../../protocol';
-import { GEM_STYLE, TOKEN_STYLE, GEM_COLORS } from '../../utils/gemColors';
+import { GEM_STYLE, TOKEN_STYLE, GEM_COLORS, getTokenCountShadow } from '../../utils/gemColors';
+import { GemIcon } from '../Art/GemIcon';
 import { getPlayerBonuses, getPlayerScore, getTotalTokenCount } from '../../game/gameLogic';
 
 const COLOR_ORDER: Record<GemColor, number> = Object.fromEntries(
@@ -43,11 +44,13 @@ export function PlayerPanel({ player, isOpponent, isCurrentTurn, compact, onRese
       <div className="player-token-grid">
         {GEM_COLORS.map(color => (
           <div key={color} className="token-column">
-            <span className="token-mini" style={{ backgroundColor: TOKEN_STYLE[color].bg, color: TOKEN_STYLE[color].text }}>
-              {player.tokens[color]}
+            <span className="token-mini" style={{ color: TOKEN_STYLE[color].text, textShadow: getTokenCountShadow(color) }}>
+              <GemIcon color={color} />
+              <span className="token-count">{player.tokens[color]}</span>
             </span>
             {bonuses[color] > 0 && (
-              <span className="bonus-badge" style={{ backgroundColor: GEM_STYLE[color].bg, color: GEM_STYLE[color].text }}>
+              <span className="bonus-badge">
+                <GemIcon color={color} />
                 {bonuses[color]}
               </span>
             )}
@@ -55,8 +58,9 @@ export function PlayerPanel({ player, isOpponent, isCurrentTurn, compact, onRese
         ))}
         {player.tokens.gold > 0 && (
           <div className="token-column">
-            <span className="token-mini" style={{ backgroundColor: TOKEN_STYLE.gold.bg, color: TOKEN_STYLE.gold.text }}>
-              {player.tokens.gold}
+            <span className="token-mini" style={{ color: TOKEN_STYLE.gold.text, textShadow: getTokenCountShadow('gold') }}>
+              <GemIcon color="gold" />
+              <span className="token-count">{player.tokens.gold}</span>
             </span>
           </div>
         )}
@@ -97,7 +101,7 @@ export function PlayerPanel({ player, isOpponent, isCurrentTurn, compact, onRese
                   onClick={() => onReservedCardClick?.(card)}
                 >
                   <span className="mini-points">{card.points > 0 ? card.points : ''}</span>
-                  <span className="mini-gem" style={{ backgroundColor: GEM_STYLE[card.color].bg }}>●</span>
+                  <GemIcon color={card.color} className="mini-gem" />
                 </div>
               );
             })}

@@ -7,7 +7,8 @@ import { useGameStore } from '../store/gameStore';
 import { useMultiplayerStore } from '../store/multiplayerStore';
 import { Board } from './Board/Board';
 import { PlayerPanel } from './Player/PlayerPanel';
-import { GEM_STYLE, TOKEN_STYLE, GEM_COLORS } from '../utils/gemColors';
+import { GEM_STYLE, TOKEN_STYLE, GEM_COLORS, getTokenCountShadow } from '../utils/gemColors';
+import { GemIcon } from './Art/GemIcon';
 
 type UIMode = 'idle' | 'selectingTokens' | 'cardAction' | 'discarding';
 
@@ -483,7 +484,7 @@ export function Game({ mode }: GameProps) {
               <div className="modal-card-cost">
                 {GEM_COLORS.filter(c => selectedCard.cost[c] > 0).map(color => (
                   <span key={color} className="cost-item">
-                    <span className="cost-dot" style={{ backgroundColor: GEM_STYLE[color].bg }} />
+                    <GemIcon color={color} className="cost-dot" />
                     <span className="cost-num">{selectedCard.cost[color]}</span>
                   </span>
                 ))}
@@ -526,8 +527,9 @@ export function Game({ mode }: GameProps) {
                     onClick={() => handleDiscardTokenClick(color)}
                     onContextMenu={(e) => handleDiscardTokenRightClick(e, color)}
                   >
-                    <span className="token-circle small" style={{ backgroundColor: TOKEN_STYLE[color].bg, color: TOKEN_STYLE[color].text }}>
-                      {myPlayer.tokens[color]}
+                    <span className="token-circle small" style={{ color: TOKEN_STYLE[color].text, textShadow: getTokenCountShadow(color) }}>
+                      <GemIcon color={color} />
+                      <span className="token-count">{myPlayer.tokens[color]}</span>
                     </span>
                     {selected > 0 && <span className="discard-badge">-{selected}</span>}
                   </div>
