@@ -1,0 +1,7 @@
+{
+  "_comment": "존재하는 일러스트 파일 ID 목록. 빈 배열이면 이미지 아예 로드 안 함 (404 로그 방지).",
+  "_howToUse": "일러스트 파일을 public/illustrations/cards/ 또는 nobles/ 에 추가한 뒤 여기에 ID를 추가하면 해당 카드/귀족에 이미지가 렌더됨.",
+  "cards": [],
+  "nobles": [],
+  "cardBacks": []
+}

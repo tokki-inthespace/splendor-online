@@ -1,5 +1,6 @@
 import type { Card } from '../../types/game';
 import { GEM_STYLE, GEM_COLORS } from '../../utils/gemColors';
+import { CardArt } from '../Art/CardArt';
 
 interface Props {
   card: Card;
@@ -17,6 +18,7 @@ export function CardSlot({ card, onClick, disabled, highlight }: Props) {
       className={`card-slot ${disabled ? 'disabled' : ''} ${highlight ? 'highlight' : ''}`}
       onClick={disabled ? undefined : onClick}
     >
+      <CardArt card={card} />
       <div className="card-header" style={{ backgroundColor: style.bg, color: style.text }}>
         <span className="card-points">{card.points > 0 ? card.points : ''}</span>
       </div>

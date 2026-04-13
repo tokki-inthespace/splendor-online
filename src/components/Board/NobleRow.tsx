@@ -1,5 +1,6 @@
 import type { Noble } from '../../types/game';
 import { GEM_STYLE, GEM_COLORS } from '../../utils/gemColors';
+import { NobleArt } from '../Art/NobleArt';
 
 interface Props {
   nobles: Noble[];
@@ -12,6 +13,7 @@ export function NobleRow({ nobles }: Props) {
         const reqs = GEM_COLORS.filter(c => noble.requirement[c] > 0);
         return (
           <div key={noble.id} className="noble-tile">
+            <NobleArt noble={noble} />
             <span className="noble-points">{noble.points}</span>
             <div className="noble-req">
               {reqs.map(color => (

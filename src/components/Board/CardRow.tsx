@@ -1,5 +1,6 @@
 import type { Card } from '../../types/game';
 import { CardSlot } from './CardSlot';
+import { CardBackArt } from '../Art/CardBackArt';
 
 interface Props {
   level: 1 | 2 | 3;
@@ -21,6 +22,7 @@ export function CardRow({ level, cards, deckCount, onCardClick, onDeckClick, dis
         style={{ borderColor: LEVEL_COLOR[level] }}
         onClick={deckCount > 0 && !disabled ? onDeckClick : undefined}
       >
+        {deckCount > 0 && <CardBackArt level={level} />}
         <span className="deck-level">{LEVEL_LABEL[level]}</span>
         <span className="deck-count">{deckCount}</span>
       </div>
