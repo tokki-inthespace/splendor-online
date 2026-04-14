@@ -10,7 +10,7 @@ export const GEM_STYLE: Record<GemColor, { bg: string; text: string }> = {
 
 export const TOKEN_STYLE: Record<TokenColor, { bg: string; text: string }> = {
   ...GEM_STYLE,
-  gold: { bg: '#FFC107', text: '#333' },
+  gold: { bg: '#FFC107', text: '#FFF' },
 };
 
 export const GEM_COLORS: GemColor[] = ['white', 'blue', 'green', 'red', 'black'];
