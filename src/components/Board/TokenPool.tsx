@@ -1,5 +1,6 @@
 import type { GemColor, TokenMap } from '../../types/game';
-import { TOKEN_STYLE, GEM_COLORS } from '../../utils/gemColors';
+import { TOKEN_STYLE, GEM_COLORS, getTokenCountShadow } from '../../utils/gemColors';
+import { GemIcon } from '../Art/GemIcon';
 
 interface Props {
   tokens: TokenMap;
@@ -20,8 +21,9 @@ export function TokenPool({ tokens, selectedTokens, onTokenClick, disabled }: Pr
             className={`token-stack ${selected > 0 ? 'selected' : ''} ${disabled || tokens[color] === 0 ? 'disabled' : ''}`}
             onClick={!disabled && tokens[color] > 0 ? () => onTokenClick?.(color) : undefined}
           >
-            <div className="token-circle" style={{ backgroundColor: style.bg, color: style.text }}>
-              {tokens[color]}
+            <div className="token-circle" style={{ color: style.text, textShadow: getTokenCountShadow(color) }}>
+              <GemIcon color={color} />
+              <span className="token-count">{tokens[color]}</span>
             </div>
             {selected > 0 && <div className="token-selected-badge">+{selected}</div>}
           </div>
@@ -29,8 +31,9 @@ export function TokenPool({ tokens, selectedTokens, onTokenClick, disabled }: Pr
       })}
       {/* 골드 토큰 (클릭 불가, 표시만) */}
       <div className="token-stack gold disabled">
-        <div className="token-circle" style={{ backgroundColor: TOKEN_STYLE.gold.bg, color: TOKEN_STYLE.gold.text }}>
-          {tokens.gold}
+        <div className="token-circle" style={{ color: TOKEN_STYLE.gold.text, textShadow: getTokenCountShadow('gold') }}>
+          <GemIcon color="gold" />
+          <span className="token-count">{tokens.gold}</span>
         </div>
         <div className="token-label">gold</div>
       </div>

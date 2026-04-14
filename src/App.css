@@ -231,6 +231,16 @@ body {
 
 .noble-num { font-weight: 600; }
 
+.noble-card-icon {
+  width: 12px;
+  height: 16px;
+  border-radius: 2px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.55);
+}
+
 /* 카드 행 */
 .card-row {
   display: flex;
@@ -239,7 +249,7 @@ body {
 }
 
 .deck-slot {
-  width: 80px;
+  width: 100px;
   min-height: 110px;
   border: 2px dashed #555;
   border-radius: 8px;
@@ -263,7 +273,7 @@ body {
 .card-slot {
   flex: 1;
   min-width: 100px;
-  min-height: 110px;
+  min-height: 160px;
   border: 2px solid #444;
   border-radius: 8px;
   display: flex;
@@ -312,10 +322,6 @@ body {
 .cost-dot {
   width: 14px;
   height: 14px;
-  border-radius: 50%;
-  display: inline-block;
-  border: 1px solid rgba(255,255,255,0.2);
-  flex-shrink: 0;
 }
 
 .cost-num { font-weight: 600; }
@@ -340,6 +346,14 @@ body {
 .token-stack:hover:not(.disabled) { transform: scale(1.1); }
 .token-stack.disabled { opacity: 0.5; cursor: default; }
 .token-stack.selected .token-circle { box-shadow: 0 0 0 3px #f0c040; }
+.token-stack.selected .token-circle:has(.gem-icon--art) {
+  box-shadow: none;
+  overflow: visible;
+}
+
+.token-stack.selected .token-circle:has(.gem-icon--art) .gem-icon-img {
+  filter: drop-shadow(0 0 6px rgba(240, 192, 64, 0.95));
+}
 
 .token-circle {
   width: 48px;
@@ -351,7 +365,11 @@ body {
   font-weight: 700;
   font-size: 1.1rem;
   border: 2px solid rgba(255,255,255,0.15);
+  position: relative;
+  overflow: hidden;
 }
+.token-circle > .gem-icon { position: absolute; inset: 0; width: 100%; height: 100%; }
+.token-circle > .token-count { position: relative; z-index: 1; }
 
 .token-circle.small {
   width: 36px;
@@ -465,7 +483,11 @@ body {
   font-weight: 700;
   font-size: 0.8rem;
   border: 1px solid rgba(255,255,255,0.15);
+  position: relative;
+  overflow: hidden;
 }
+.token-mini > .gem-icon { position: absolute; inset: 0; width: 100%; height: 100%; }
+.token-mini > .token-count { position: relative; z-index: 1; }
 
 .player-cards {
   display: flex;
@@ -482,12 +504,14 @@ body {
 .bonus-badge {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  gap: 3px;
+  padding: 1px 6px 1px 2px;
+  border-radius: 10px;
+  font-size: 0.72rem;
   font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
 }
+.bonus-badge > .gem-icon { width: 14px; height: 14px; }
 
 .owned-cards {
   display: flex;
@@ -540,8 +564,6 @@ body {
 .mini-gem {
   width: 12px;
   height: 12px;
-  border-radius: 50%;
-  font-size: 0;
 }
 
 .reserved-card-back {
@@ -1033,6 +1055,28 @@ body {
   cursor: not-allowed;
 }
 
+/* ─── 보석 아이콘 (공통) ──────────────
+   manifest.gems에 등록된 색상은 /illustrations/gems/{color}.webp로,
+   없으면 색상 원형(fallback)으로 렌더. 크기는 호출부 CSS에서 지정. */
+.gem-icon {
+  display: inline-block;
+  position: relative;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.gem-icon--fallback {
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.gem-icon-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 /* ─── 카드/귀족/덱 일러스트 ──────────────
    이미지 파일이 없으면 <img>가 onError로 스스로 숨겨져,
    기존 색상 기반 UI가 자연스럽게 fallback됨. */
@@ -1069,17 +1113,93 @@ body {
   z-index: 1;
 }
 
-/* 일러스트 있을 때는 글자 가독성을 위해 반투명 배경 */
+/* 일러스트 있을 때 — 귀족 카드와 같은 보드게임 레이아웃.
+   중앙 영역에는 오버레이 없이 일러스트를 그대로 노출.
+   - 점수는 좌상단 원형 뱃지 (배경색은 인라인 style의 카드 색상 유지 → 점수 + 색상 정체성을 동시에 표시)
+   - 비용은 하단 반투명 스트립 (귀족의 noble-req와 동일 스타일) */
+.card-slot:has(.card-art) {
+  display: block;
+  padding: 0;
+}
+
 .card-slot:has(.card-art) .card-header {
-  background: rgba(20, 20, 30, 0.72) !important;
-  color: #fff !important;
-  backdrop-filter: blur(2px);
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  min-width: 0;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  /* background-color는 인라인 style(카드 색상) 유지 */
+}
+
+.card-slot:has(.card-art) .card-points {
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .card-slot:has(.card-art) .card-cost {
-  background: rgba(20, 20, 30, 0.72);
-  backdrop-filter: blur(2px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  flex: unset;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+  gap: 4px 7px;
+  padding: 6px 5px;
+  min-height: 46px;
+  background: linear-gradient(to top, rgba(15, 15, 25, 0.92), rgba(15, 15, 25, 0.3));
+  backdrop-filter: blur(3px);
+  border-top: none;
+}
+
+.card-slot:has(.card-art) .cost-item {
+  font-size: 0.72rem;
+  gap: 3px;
+}
+
+/* 비용 종류가 4개 이상일 때 — 2x2 그리드로 강제 */
+.card-slot:has(.card-art) .card-cost.card-cost--grid {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  column-gap: 12px;
+  row-gap: 3px;
+  justify-content: center;
+  align-content: center;
+}
+
+.card-slot:has(.card-art) .cost-dot {
+  width: 12px;
+  height: 12px;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.card-slot:has(.card-art) .cost-dot.gem-icon--fallback {
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+}
+
+.card-slot:has(.card-art) .cost-dot.gem-icon--art {
+  border-color: transparent;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+}
+
+.card-slot:has(.card-art) .cost-num {
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95);
 }
 
 /* 일러스트 있을 때 — 보드게임 카드 스타일 (점수 뱃지 좌상단 + 요구량 하단 스트립) */
@@ -1137,6 +1257,14 @@ body {
   height: 12px;
   border-color: rgba(255, 255, 255, 0.4);
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+}
+
+.noble-tile:has(.noble-art) .noble-card-icon {
+  width: 18px;
+  height: 24px;
+  border-radius: 3px;
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
 }
 
 .noble-tile:has(.noble-art) .noble-num {
