@@ -38,6 +38,7 @@ export interface ClientEvents {
   'room:ready': (payload: { ready: boolean }) => void;
   'room:start': () => void;
   'room:leave': () => void;
+  'room:returnToLobby': () => void;
   'room:switch_to_spectator': () => void;
   'room:switch_to_player': () => void;
   'game:takeTokens': (payload: { tokens: Partial<GemMap> }) => void;
@@ -71,6 +72,7 @@ export interface ServerEvents {
     turnPhase: TurnPhase;
     logs: string[];
   }) => void;
+  'room:returnedToLobby': (payload: { room: RoomInfo }) => void;
   'room:reconnect_failed': () => void;
   'room:error': (payload: { message: string }) => void;
   'game:state': (payload: {

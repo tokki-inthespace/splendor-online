@@ -399,6 +399,26 @@ export class GameRoom {
     this.logs = [...this.logs, `${disconnectedName}이(가) 게임을 떠났습니다 — ${winner.name} 승리!`];
   }
 
+  /** 게임 종료 후 대기실로 되돌리기 */
+  returnToLobby(): void {
+    this.status = 'waiting';
+    this.gameState = null;
+    this.turnPhase = 'idle';
+    this.previousState = null;
+    this.previousLogs = null;
+    this.logs = [];
+    this.skipCounts = [];
+    this.abandonedPlayers.clear();
+    this.emoteCooldowns.clear();
+
+    // 모든 플레이어 ready 상태 초기화
+    for (const p of this.players) {
+      p.ready = false;
+    }
+
+    this.touch();
+  }
+
   /** 총 플레이어 수 */
   get playerCount(): number {
     return this.players.length;
