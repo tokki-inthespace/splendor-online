@@ -133,6 +133,7 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
       sendEmote: mp.sendEmote,
       clearError: mp.clearError,
       resetGame: mp.resetGame,
+      returnToLobby: mp.returnToLobby,
       startGame: undefined as undefined | ((name: string) => void),
     };
   }
@@ -158,6 +159,7 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
     sendEmote: (_emoteId: EmoteId) => { /* no-op in singleplayer */ },
     clearError: sp.clearError,
     resetGame: sp.resetGame,
+    returnToLobby: undefined as undefined | (() => void),
     startGame: sp.startGame,
   };
 }
@@ -168,7 +170,7 @@ export function Game({ mode }: GameProps) {
     activeEmotes, myEmoteCooldownUntil, sendEmote,
     doTakeTokens, doPurchaseCard, doReserveCard, doReserveCardFromDeck,
     doDiscardTokens, undoAction, confirmTurn, clearError,
-    startGame, resetGame,
+    startGame, resetGame, returnToLobby,
   } = useGameActions(mode);
 
   const [uiMode, setUIMode] = useState<UIMode>('idle');
@@ -614,6 +616,11 @@ export function Game({ mode }: GameProps) {
               {mode === 'singleplayer' && startGame && myPlayer && (
                 <button className="btn btn-confirm" onClick={() => startGame(myPlayer.name)}>
                   다시하기
+                </button>
+              )}
+              {mode === 'multiplayer' && returnToLobby && !isSpectator && (
+                <button className="btn btn-confirm" onClick={returnToLobby}>
+                  대기실로 돌아가기
                 </button>
               )}
               <button className="btn btn-cancel" onClick={resetGame}>

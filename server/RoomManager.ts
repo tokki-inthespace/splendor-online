@@ -113,6 +113,7 @@ export class RoomManager {
     socket.on('room:ready', ({ ready }) => this.handleReady(socket, ready));
     socket.on('room:start', () => this.handleStart(socket));
     socket.on('room:leave', () => this.handleLeave(socket));
+    socket.on('room:returnToLobby', () => this.handleReturnToLobby(socket));
     socket.on('room:switch_to_spectator', () => this.handleSwitchToSpectator(socket));
     socket.on('room:switch_to_player', () => this.handleSwitchToPlayer(socket));
     socket.on('disconnect', () => this.handleDisconnect(socket));
@@ -178,6 +179,7 @@ export class RoomManager {
       socket.on('room:ready', ({ ready }) => this.handleReady(socket, ready));
       socket.on('room:start', () => this.handleStart(socket));
       socket.on('room:leave', () => this.handleLeave(socket));
+      socket.on('room:returnToLobby', () => this.handleReturnToLobby(socket));
       socket.on('disconnect', () => this.handleDisconnect(socket));
 
       // 재접속 플레이어에게 전체 상태 전송
@@ -382,6 +384,49 @@ export class RoomManager {
     console.log(`[게임 시작] ${roomCode} — ${room.players.length}명`);
 
     this.broadcastAndCheckAutoSkip(roomCode, room);
+  }
+
+  private handleReturnToLobby(socket: IOSocket): void {
+    const { roomCode, playerIndex } = socket.data ?? {};
+    if (!roomCode || playerIndex === undefined || playerIndex === null) return;
+    if (playerIndex === -1) return; // 관전자는 트리거 불가
+
+    const room = this.rooms.get(roomCode);
+    if (!room || room.status !== 'ended') return;
+
+    // 턴 타이머 정리 (있을 경우)
+    this.clearTurnTimer(roomCode);
+
+    // 끊긴 플레이어 제거 (대기실에선 끊긴 플레이어를 유지할 필요 없음)
+    const disconnectedPlayers = room.players.filter(p => !p.connected);
+    for (const dp of disconnectedPlayers) {
+      // disconnect 타이머 정리
+      const dt = this.disconnectTimers.get(dp.socketId);
+      if (dt) {
+        clearTimeout(dt);
+        this.disconnectTimers.delete(dp.socketId);
+      }
+      const s = this.io.sockets.sockets.get(dp.socketId);
+      if (s) {
+        s.leave(this.socketRoom(roomCode));
+        s.data = {};
+      }
+      room.removePlayer(dp.socketId);
+    }
+
+    // 남은 플레이어들의 playerIndex 재정렬
+    for (const p of room.players) {
+      const s = this.io.sockets.sockets.get(p.socketId);
+      if (s) s.data.playerIndex = p.playerIndex;
+    }
+
+    // 방 상태를 대기실로 리셋
+    room.returnToLobby();
+
+    // 모든 클라이언트에게 대기실 복귀 알림
+    this.io.to(this.socketRoom(roomCode)).emit('room:returnedToLobby', { room: room.toRoomInfo() });
+    this.io.to(this.socketRoom(roomCode)).emit('room:updated', { room: room.toRoomInfo() });
+    console.log(`[대기실 복귀] ${roomCode} — ${room.players.length}명`);
   }
 
   private handleLeave(socket: IOSocket): void {

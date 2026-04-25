@@ -70,6 +70,9 @@ interface MultiplayerStore {
   clearError: () => void;
   sendEmote: (emoteId: EmoteId) => void;
 
+  // 대기실로 돌아가기
+  returnToLobby: () => void;
+
   // 게임 리셋 (방 나가기)
   resetGame: () => void;
 }
@@ -193,6 +196,18 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         turnTimer: null,
         activeEmotes: {},
         myEmoteCooldownUntil: 0,
+      });
+    });
+
+    socket.on('room:returnedToLobby', ({ room }) => {
+      set({
+        roomInfo: room,
+        gameState: null,
+        turnPhase: 'idle',
+        logs: [],
+        error: null,
+        turnTimer: null,
+        activeEmotes: {},
       });
     });
 
@@ -384,6 +399,10 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  returnToLobby: () => {
+    getSocket().emit('room:returnToLobby');
+  },
 
   resetGame: () => {
     get().leaveRoom();
