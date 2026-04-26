@@ -933,6 +933,19 @@ body {
 
 .lobby-player.ready { border-color: #4CAF50; }
 
+.lobby-player.clickable {
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.lobby-player.clickable:hover {
+  background: #323249;
+  border-color: #6aa8ff;
+}
+.lobby-player.clickable:focus-visible {
+  outline: 2px solid #6aa8ff;
+  outline-offset: 2px;
+}
+
 .lobby-player-name {
   font-weight: 600;
   display: flex;
@@ -947,6 +960,20 @@ body {
   padding: 1px 6px;
   border-radius: 4px;
   font-weight: 700;
+}
+
+.lobby-first-badge {
+  font-size: 0.65rem;
+  background: #6aa8ff;
+  color: #1a1a2e;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.lobby-section-hint {
+  color: #6aa8ff;
+  font-weight: 500;
 }
 
 .lobby-player-status {
