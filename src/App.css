@@ -1,12 +1,87 @@
+/* ─── 테마 토큰 ──────────────────────── */
+
+:root {
+  /* 표면 — 배경/패널 */
+  --bg:           #1a1a2e;
+  --surface:      #2a2a3e;
+  --surface-2:    #222238;
+  --surface-3:    #3a3a5f;
+  --surface-alt:  #2a2a4a;
+
+  /* 텍스트 */
+  --text:         #e0e0e0;
+  --text-strong:  #fff;
+  --text-muted:   #aaa;
+  --text-faint:   #888;
+  --text-dim:     #666;
+  --text-disabled:#555;
+
+  /* 보더 */
+  --border:        #444;
+  --border-subtle: #333;
+  --border-strong: #555;
+}
+
+[data-theme="light"] {
+  --bg:           #f4f4f8;
+  --surface:      #ffffff;
+  --surface-2:    #f0f0f4;
+  --surface-3:    #dee0e8;
+  --surface-alt:  #e8eaf0;
+
+  --text:         #1a1a2e;
+  --text-strong:  #0a0a18;
+  --text-muted:   #555;
+  --text-faint:   #777;
+  --text-dim:     #999;
+  --text-disabled:#bbb;
+
+  --border:        #c8c8d0;
+  --border-subtle: #e0e0e6;
+  --border-strong: #a0a0aa;
+}
+
 /* ─── 전역 ──────────────────────────── */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #1a1a2e;
-  color: #e0e0e0;
+  background: var(--bg);
+  color: var(--text);
   min-height: 100vh;
+}
+
+/* ─── 테마 토글 ──────────────────────── */
+
+.theme-toggle {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.theme-toggle:hover {
+  background: var(--surface-3);
+  transform: scale(1.05);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent, #f0c040);
+  outline-offset: 2px;
 }
 
 /* ─── 시작 화면 ─────────────────────── */
@@ -26,7 +101,7 @@ body {
 }
 
 .start-subtitle {
-  color: #888;
+  color: var(--text-faint);
   margin-bottom: 16px;
 }
 
@@ -38,9 +113,9 @@ body {
 .name-input {
   padding: 10px 16px;
   border-radius: 8px;
-  border: 1px solid #444;
-  background: #2a2a3e;
-  color: #e0e0e0;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   font-size: 1rem;
   outline: none;
 }
@@ -84,17 +159,17 @@ body {
   align-items: center;
   gap: 6px;
   font-size: 0.7rem;
-  color: #666;
+  color: var(--text-dim);
   z-index: 10;
 }
 
 .spectator-list-label {
-  color: #555;
+  color: var(--text-disabled);
   font-weight: 600;
 }
 
 .spectator-list-name {
-  color: #777;
+  color: var(--text-dim);
 }
 
 .spectator-list-name:not(:last-child)::after {
@@ -178,11 +253,11 @@ body {
 
 .section-title {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding-bottom: 4px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 2px;
 }
 
@@ -200,7 +275,7 @@ body {
   padding: 4px 6px;
   border: 1px solid #7B1FA2;
   border-radius: 6px;
-  background: #2a2a3e;
+  background: var(--surface);
   font-size: 0.8rem;
 }
 
@@ -251,34 +326,34 @@ body {
 .deck-slot {
   width: 100px;
   min-height: 110px;
-  border: 2px dashed #555;
+  border: 2px dashed var(--border-strong);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  background: #2a2a3e;
+  background: var(--surface);
   cursor: pointer;
   transition: border-color 0.15s;
   flex-shrink: 0;
 }
 
-.deck-slot:hover:not(.empty) { border-color: #aaa; }
+.deck-slot:hover:not(.empty) { border-color: var(--text-muted); }
 .deck-slot.empty { opacity: 0.3; cursor: default; }
 
-.deck-level { font-weight: 700; font-size: 1.2rem; color: #aaa; }
-.deck-count { font-size: 0.8rem; color: #666; }
+.deck-level { font-weight: 700; font-size: 1.2rem; color: var(--text-muted); }
+.deck-count { font-size: 0.8rem; color: var(--text-dim); }
 
 .card-slot {
   flex: 1;
   min-width: 100px;
   min-height: 160px;
-  border: 2px solid #444;
+  border: 2px solid var(--border);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  background: #2a2a3e;
+  background: var(--surface);
   cursor: pointer;
   transition: transform 0.15s, border-color 0.15s;
   overflow: hidden;
@@ -393,7 +468,7 @@ body {
   justify-content: center;
 }
 
-.token-label { font-size: 0.7rem; color: #888; }
+.token-label { font-size: 0.7rem; color: var(--text-faint); }
 
 /* ─── 플레이어 패널 ──────────────────── */
 
@@ -401,9 +476,9 @@ body {
   width: 100%;
   min-width: 340px;
   padding: 12px 16px;
-  border: 2px solid #333;
+  border: 2px solid var(--border-subtle);
   border-radius: 10px;
-  background: #222238;
+  background: var(--surface-2);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -468,7 +543,7 @@ body {
 .token-total {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #888;
+  color: var(--text-faint);
   margin-left: 4px;
   align-self: center;
 }
@@ -533,11 +608,11 @@ body {
   border: 1px solid rgba(255,255,255,0.15);
 }
 
-.no-bonus { font-size: 0.8rem; color: #666; }
+.no-bonus { font-size: 0.8rem; color: var(--text-dim); }
 
 .section-label {
   font-size: 0.75rem;
-  color: #888;
+  color: var(--text-faint);
   margin-right: 6px;
 }
 
@@ -548,14 +623,14 @@ body {
 .reserved-card-mini {
   width: 40px;
   height: 52px;
-  border: 2px solid #555;
+  border: 2px solid var(--border-strong);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  background: #2a2a3e;
+  background: var(--surface);
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 600;
@@ -571,13 +646,13 @@ body {
 .reserved-card-back {
   width: 40px;
   height: 52px;
-  border: 2px solid #555;
+  border: 2px solid var(--border-strong);
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #333;
-  color: #666;
+  color: var(--text-dim);
   font-size: 1.2rem;
 }
 
@@ -604,12 +679,12 @@ body {
   justify-content: center;
   gap: 8px;
   padding: 12px 16px;
-  background: #2a2a3e;
-  border-top: 2px solid #444;
+  background: var(--surface);
+  border-top: 2px solid var(--border);
   z-index: 10;
 }
 
-.action-label { font-size: 0.9rem; color: #aaa; }
+.action-label { font-size: 0.9rem; color: var(--text-muted); }
 
 .action-token {
   display: inline-flex;
@@ -622,7 +697,7 @@ body {
   font-size: 0.85rem;
 }
 
-.ai-bar { color: #888; font-style: italic; }
+.ai-bar { color: var(--text-faint); font-style: italic; }
 .ai-bar.has-timer { color: #FF9800; font-style: normal; }
 
 .turn-timer-count {
@@ -647,8 +722,8 @@ body {
 }
 
 .modal {
-  background: #2a2a3e;
-  border: 2px solid #555;
+  background: var(--surface);
+  border: 2px solid var(--border-strong);
   border-radius: 12px;
   padding: 20px;
   min-width: 280px;
@@ -711,7 +786,7 @@ body {
 /* 토큰 버리기 힌트 */
 .discard-hint {
   font-size: 0.75rem;
-  color: #888;
+  color: var(--text-faint);
   text-align: center;
   margin: 4px 0 0;
 }
@@ -719,7 +794,7 @@ body {
 /* 게임 오버 */
 .game-over { text-align: center; }
 .winner-name { font-size: 1.5rem; font-weight: 700; color: #f0c040; }
-.winner-score { font-size: 0.9rem; color: #aaa; margin-bottom: 16px; }
+.winner-score { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; }
 
 /* ─── 에러 바 ────────────────────────── */
 
@@ -815,7 +890,7 @@ body {
 
 .lobby-code-label {
   font-size: 0.8rem;
-  color: #888;
+  color: var(--text-faint);
 }
 
 .lobby-code {
@@ -841,8 +916,8 @@ body {
 
 .lobby-section-title {
   font-size: 0.8rem;
-  color: #888;
-  border-bottom: 1px solid #333;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border-subtle);
   padding-bottom: 4px;
 }
 
@@ -851,9 +926,9 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #2a2a3e;
+  background: var(--surface);
   border-radius: 8px;
-  border: 1px solid #333;
+  border: 1px solid var(--border-subtle);
 }
 
 .lobby-player.ready { border-color: #4CAF50; }
@@ -876,11 +951,11 @@ body {
 
 .lobby-player-status {
   font-size: 0.8rem;
-  color: #888;
+  color: var(--text-faint);
 }
 
 .lobby-player-status.ready { color: #4CAF50; }
-.lobby-player-status.spectator { color: #888; }
+.lobby-player-status.spectator { color: var(--text-faint); }
 
 .lobby-spectators {
   margin-top: 4px;
@@ -1003,8 +1078,8 @@ body {
   height: 44px;
   border-radius: 50%;
   border: none;
-  background: #2a2a4a;
-  color: #fff;
+  background: var(--surface-alt);
+  color: var(--text-strong);
   font-size: 1.4rem;
   line-height: 1;
   cursor: pointer;
@@ -1015,14 +1090,14 @@ body {
   transition: transform 0.15s, background 0.15s;
 }
 
-.emote-picker-trigger:hover { background: #3a3a5f; transform: scale(1.05); }
+.emote-picker-trigger:hover { background: var(--surface-3); transform: scale(1.05); }
 .emote-picker-trigger.cooldown {
-  background: #444;
-  color: #aaa;
+  background: var(--border);
+  color: var(--text-muted);
   font-size: 0.95rem;
   cursor: default;
 }
-.emote-picker-trigger.cooldown:hover { transform: none; background: #444; }
+.emote-picker-trigger.cooldown:hover { transform: none; background: var(--border); }
 
 .emote-picker-panel {
   display: flex;
@@ -1030,7 +1105,7 @@ body {
   gap: 6px;
   padding: 8px;
   background: rgba(20, 20, 40, 0.95);
-  border: 1px solid #333;
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
@@ -1040,7 +1115,7 @@ body {
   height: 40px;
   border-radius: 8px;
   border: none;
-  background: #2a2a4a;
+  background: var(--surface-alt);
   font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
@@ -1048,7 +1123,7 @@ body {
 }
 
 .emote-picker-item:hover:not(:disabled) {
-  background: #3a3a5f;
+  background: var(--surface-3);
   transform: scale(1.08);
 }
 
