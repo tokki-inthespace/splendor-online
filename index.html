@@ -5,6 +5,18 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>splendor-online</title>
+    <script>
+      // 테마 부트스트랩 — React 마운트 전 data-theme을 설정해 깜빡임 방지
+      (function () {
+        try {
+          var saved = localStorage.getItem('splendor-theme');
+          var theme = saved === 'light' || saved === 'dark'
+            ? saved
+            : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) { /* noop */ }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
