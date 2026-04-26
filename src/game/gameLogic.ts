@@ -112,9 +112,12 @@ export function refillVisibleCards(state: GameState): GameState {
 
 // ─── 게임 초기화 ──────────────────────────────────────
 
-export function initGame(playerNames: string[]): GameState {
+export function initGame(playerNames: string[], firstPlayerIndex: number = 0): GameState {
   const count = playerNames.length;
   if (count < 2 || count > 4) throw new Error('2~4명의 플레이어가 필요합니다');
+  if (firstPlayerIndex < 0 || firstPlayerIndex >= count) {
+    throw new Error('잘못된 firstPlayerIndex');
+  }
 
   // 플레이어 수에 따른 토큰 개수: 2인→4, 3인→5, 4인→7
   const tokenCount = count === 2 ? 4 : count === 3 ? 5 : 7;
@@ -136,7 +139,7 @@ export function initGame(playerNames: string[]): GameState {
 
   return {
     players,
-    currentPlayerIndex: 0,
+    currentPlayerIndex: firstPlayerIndex,
     deck: {
       1: level1.slice(4),
       2: level2.slice(4),

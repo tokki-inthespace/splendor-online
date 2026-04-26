@@ -48,6 +48,9 @@ export class GameRoom {
   // 이모트 쿨다운 (플레이어별 마지막 이모트 시각)
   emoteCooldowns = new Map<number, number>();
 
+  // 호스트가 지정한 선플레이어 인덱스 (기본값: 호스트)
+  firstPlayerIndex: number = 0;
+
   // 방 정리용 타임스탬프
   lastActivityAt: number = Date.now();
 
@@ -103,7 +106,22 @@ export class GameRoom {
     if (idx === -1) return undefined;
     const [removed] = this.players.splice(idx, 1);
     this.players.forEach((p, i) => { p.playerIndex = i; });
+
+    // 선플레이어 재조정: 떠난 사람이 선이었으면 호스트로 폴백, 그 앞이면 한 칸 당김
+    if (idx === this.firstPlayerIndex) {
+      this.firstPlayerIndex = 0;
+    } else if (idx < this.firstPlayerIndex) {
+      this.firstPlayerIndex--;
+    }
+
     return removed;
+  }
+
+  /** 호스트가 선플레이어를 지정. 유효 범위 밖이면 false 반환. */
+  setFirstPlayer(playerIndex: number): boolean {
+    if (playerIndex < 0 || playerIndex >= this.players.length) return false;
+    this.firstPlayerIndex = playerIndex;
+    return true;
   }
 
   getPlayerBySocketId(socketId: string): PlayerSession | undefined {
@@ -119,7 +137,11 @@ export class GameRoom {
 
   startGame(): GameState {
     const names = this.players.map(p => p.name);
-    this.gameState = initGame(names);
+    // 인덱스 안전 클램프 (방어적): 플레이어 변동으로 범위를 벗어나면 호스트로 복귀
+    if (this.firstPlayerIndex < 0 || this.firstPlayerIndex >= names.length) {
+      this.firstPlayerIndex = 0;
+    }
+    this.gameState = initGame(names, this.firstPlayerIndex);
     this.status = 'playing';
     this.turnPhase = 'idle';
     this.logs = [];
@@ -416,6 +438,8 @@ export class GameRoom {
       p.ready = false;
     }
 
+    // firstPlayerIndex는 호스트 의도이므로 유지 (필요시 호스트가 다시 변경)
+
     this.touch();
   }
 
@@ -437,6 +461,7 @@ export class GameRoom {
         connected: p.connected,
       })),
       spectators: this.spectators.map(s => s.name),
+      firstPlayerIndex: this.firstPlayerIndex,
     };
   }
 

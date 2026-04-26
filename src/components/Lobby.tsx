@@ -8,7 +8,7 @@ export function Lobby({ onLeave }: LobbyProps) {
   const {
     roomCode, roomInfo, lobbyError, myPlayerIndex, isSpectator,
     gameState,
-    setReady, startGame, leaveRoom, switchToSpectator, switchToPlayer, clearLobbyError,
+    setReady, setFirstPlayer, startGame, leaveRoom, switchToSpectator, switchToPlayer, clearLobbyError,
   } = useMultiplayerStore();
 
   // 게임이 시작되면 이 컴포넌트는 더 이상 렌더링되지 않아야 함
@@ -48,18 +48,35 @@ export function Lobby({ onLeave }: LobbyProps) {
       </div>
 
       <div className="lobby-players">
-        <p className="lobby-section-title">플레이어 ({roomInfo.players.length}/4)</p>
-        {roomInfo.players.map((p, i) => (
-          <div key={i} className={`lobby-player ${p.ready || p.isHost ? 'ready' : ''}`}>
-            <span className="lobby-player-name">
-              {p.name}
-              {p.isHost && <span className="lobby-host-badge">HOST</span>}
-            </span>
-            <span className={`lobby-player-status ${p.ready ? 'ready' : ''}`}>
-              {p.isHost ? '' : p.ready ? '준비 완료' : '대기 중'}
-            </span>
-          </div>
-        ))}
+        <p className="lobby-section-title">
+          플레이어 ({roomInfo.players.length}/4)
+          {isHost && roomInfo.players.length > 1 && (
+            <span className="lobby-section-hint"> · 선플레이어를 클릭해 지정</span>
+          )}
+        </p>
+        {roomInfo.players.map((p, i) => {
+          const isFirst = i === roomInfo.firstPlayerIndex;
+          const clickable = isHost && !isFirst;
+          return (
+            <div
+              key={i}
+              className={`lobby-player ${p.ready || p.isHost ? 'ready' : ''} ${clickable ? 'clickable' : ''}`}
+              onClick={clickable ? () => setFirstPlayer(i) : undefined}
+              role={clickable ? 'button' : undefined}
+              tabIndex={clickable ? 0 : undefined}
+              onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFirstPlayer(i); } } : undefined}
+            >
+              <span className="lobby-player-name">
+                {p.name}
+                {p.isHost && <span className="lobby-host-badge">HOST</span>}
+                {isFirst && <span className="lobby-first-badge">선</span>}
+              </span>
+              <span className={`lobby-player-status ${p.ready ? 'ready' : ''}`}>
+                {p.isHost ? '' : p.ready ? '준비 완료' : '대기 중'}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {roomInfo.spectators.length > 0 && (

@@ -53,6 +53,7 @@ interface MultiplayerStore {
   createRoom: (playerName: string) => void;
   joinRoom: (roomCode: string, playerName: string) => void;
   setReady: (ready: boolean) => void;
+  setFirstPlayer: (playerIndex: number) => void;
   startGame: () => void;
   leaveRoom: () => void;
   switchToSpectator: () => void;
@@ -323,6 +324,10 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
 
   setReady: (ready) => {
     getSocket().emit('room:ready', { ready });
+  },
+
+  setFirstPlayer: (playerIndex) => {
+    getSocket().emit('room:setFirstPlayer', { playerIndex });
   },
 
   startGame: () => {

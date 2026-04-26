@@ -111,6 +111,7 @@ export class RoomManager {
     socket.on('room:create', ({ playerName }) => this.handleCreate(socket, playerName));
     socket.on('room:join', ({ roomCode, playerName }) => this.handleJoin(socket, roomCode, playerName));
     socket.on('room:ready', ({ ready }) => this.handleReady(socket, ready));
+    socket.on('room:setFirstPlayer', ({ playerIndex }) => this.handleSetFirstPlayer(socket, playerIndex));
     socket.on('room:start', () => this.handleStart(socket));
     socket.on('room:leave', () => this.handleLeave(socket));
     socket.on('room:returnToLobby', () => this.handleReturnToLobby(socket));
@@ -177,6 +178,7 @@ export class RoomManager {
 
       // 재접속 이벤트 등록 (로비 이벤트 + disconnect)
       socket.on('room:ready', ({ ready }) => this.handleReady(socket, ready));
+      socket.on('room:setFirstPlayer', ({ playerIndex }) => this.handleSetFirstPlayer(socket, playerIndex));
       socket.on('room:start', () => this.handleStart(socket));
       socket.on('room:leave', () => this.handleLeave(socket));
       socket.on('room:returnToLobby', () => this.handleReturnToLobby(socket));
@@ -356,6 +358,28 @@ export class RoomManager {
     if (!player) return;
 
     player.ready = ready;
+    room.touch();
+    this.io.to(this.socketRoom(roomCode)).emit('room:updated', { room: room.toRoomInfo() });
+  }
+
+  private handleSetFirstPlayer(socket: IOSocket, playerIndex: number): void {
+    const { roomCode } = socket.data ?? {};
+    if (!roomCode) return;
+
+    const room = this.rooms.get(roomCode);
+    if (!room || room.status !== 'waiting') return;
+
+    const player = room.getPlayerBySocketId(socket.id);
+    if (!player || player.playerIndex !== room.hostIndex) {
+      socket.emit('room:error', { message: '호스트만 선플레이어를 지정할 수 있습니다' });
+      return;
+    }
+
+    if (!room.setFirstPlayer(playerIndex)) {
+      socket.emit('room:error', { message: '잘못된 플레이어 인덱스입니다' });
+      return;
+    }
+
     room.touch();
     this.io.to(this.socketRoom(roomCode)).emit('room:updated', { room: room.toRoomInfo() });
   }

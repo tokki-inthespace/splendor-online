@@ -29,6 +29,7 @@ export interface RoomInfo {
   players: RoomPlayer[];
   spectators: string[];  // 관전자 이름 목록
   status: 'waiting' | 'playing' | 'ended';
+  firstPlayerIndex: number;  // 게임 시작 시 첫 턴을 가져갈 플레이어 (호스트가 지정)
 }
 
 // ─── Client → Server 이벤트 ──────────────────────────────
@@ -36,6 +37,7 @@ export interface ClientEvents {
   'room:create': (payload: { playerName: string }) => void;
   'room:join': (payload: { roomCode: string; playerName: string }) => void;
   'room:ready': (payload: { ready: boolean }) => void;
+  'room:setFirstPlayer': (payload: { playerIndex: number }) => void;
   'room:start': () => void;
   'room:leave': () => void;
   'room:returnToLobby': () => void;
