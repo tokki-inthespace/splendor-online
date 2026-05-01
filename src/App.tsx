@@ -165,6 +165,11 @@ function App() {
     <div className="start-screen">
       <h1 className="start-title">Splendor Online</h1>
       <p className="start-subtitle">보석 상인이 되어 15점을 먼저 달성하세요</p>
+      {mpStore.lobbyError && (
+        <div className="lobby-error" onClick={mpStore.clearLobbyError}>
+          {mpStore.lobbyError}
+        </div>
+      )}
       <div className="start-form">
         <input
           className="name-input"

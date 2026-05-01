@@ -197,6 +197,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         turnTimer: null,
         activeEmotes: {},
         myEmoteCooldownUntil: 0,
+        lobbyError: '게임 세션이 만료되었습니다. 새 방에 참가해주세요.',
       });
     });
 
@@ -287,6 +288,7 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
         turnTimer: null,
         activeEmotes: {},
         myEmoteCooldownUntil: 0,
+        lobbyError: '서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.',
       });
     });
 

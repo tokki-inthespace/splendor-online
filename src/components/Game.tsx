@@ -124,6 +124,7 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
       turnTimer: mp.turnTimer,
       activeEmotes: mp.activeEmotes,
       myEmoteCooldownUntil: mp.myEmoteCooldownUntil,
+      connectionStatus: mp.connectionStatus,
       doTakeTokens: mp.doTakeTokens,
       doPurchaseCard: mp.doPurchaseCard,
       doReserveCard: mp.doReserveCard,
@@ -150,6 +151,7 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
     turnTimer: null as { remainingSeconds: number; playerName: string; playerIndex: number } | null,
     activeEmotes: {} as Record<number, { emoteId: EmoteId; timestamp: number }>,
     myEmoteCooldownUntil: 0,
+    connectionStatus: 'connected' as 'disconnected' | 'connecting' | 'connected' | 'reconnecting',
     doTakeTokens: sp.doTakeTokens,
     doPurchaseCard: sp.doPurchaseCard,
     doReserveCard: sp.doReserveCard,
@@ -168,7 +170,7 @@ function useGameActions(mode: 'singleplayer' | 'multiplayer') {
 export function Game({ mode }: GameProps) {
   const {
     gameState, turnPhase, error, myPlayerIndex, isSpectator, spectators, turnTimer,
-    activeEmotes, myEmoteCooldownUntil, sendEmote,
+    activeEmotes, myEmoteCooldownUntil, sendEmote, connectionStatus,
     doTakeTokens, doPurchaseCard, doReserveCard, doReserveCardFromDeck,
     doDiscardTokens, undoAction, confirmTurn, clearError,
     startGame, resetGame, returnToLobby,
@@ -424,6 +426,17 @@ export function Game({ mode }: GameProps) {
 
   return (
     <div className={`game ${layoutClass}`}>
+      {/* 연결 상태 배너 (멀티플레이) */}
+      {mode === 'multiplayer' && connectionStatus !== 'connected' && (
+        <div className="connection-banner">
+          {connectionStatus === 'reconnecting'
+            ? '연결이 끊겼습니다 — 재접속 시도 중...'
+            : connectionStatus === 'connecting'
+              ? '연결 중...'
+              : '연결이 끊어졌습니다'}
+        </div>
+      )}
+
       {/* 관전자 리스트 */}
       {mode === 'multiplayer' && spectators.length > 0 && (
         <div className="spectator-list">
