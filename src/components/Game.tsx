@@ -8,6 +8,7 @@ import { useMultiplayerStore } from '../store/multiplayerStore';
 import { Board } from './Board/Board';
 import { PlayerPanel } from './Player/PlayerPanel';
 import { GEM_STYLE, TOKEN_STYLE, GEM_COLORS, getTokenCountShadow } from '../utils/gemColors';
+import { playSound } from '../utils/sound';
 import { GemIcon } from './Art/GemIcon';
 
 type UIMode = 'idle' | 'selectingTokens' | 'cardAction' | 'discarding';
@@ -189,6 +190,41 @@ export function Game({ mode }: GameProps) {
     }
   }, [gameState, turnPhase, myPlayerIndex]);
 
+  // ─── 사운드: 내 귀족 획득 ─────────────
+  const myNoblesCount = gameState?.players[myPlayerIndex]?.nobles.length ?? 0;
+  const prevMyNoblesRef = useRef(myNoblesCount);
+  useEffect(() => {
+    if (myNoblesCount > prevMyNoblesRef.current) {
+      playSound('noble');
+    }
+    prevMyNoblesRef.current = myNoblesCount;
+  }, [myNoblesCount]);
+
+  // ─── 사운드: 게임 종료 (승/패) ────────
+  const gamePhase = gameState?.phase;
+  const winnerId = gameState?.winner?.id;
+  const myPlayerId = gameState?.players[myPlayerIndex]?.id;
+  const prevPhaseRef = useRef(gamePhase);
+  useEffect(() => {
+    if (gamePhase === 'ended' && prevPhaseRef.current !== 'ended' && !isSpectator && myPlayerId) {
+      playSound(winnerId === myPlayerId ? 'win' : 'lose');
+    }
+    prevPhaseRef.current = gamePhase;
+  }, [gamePhase, winnerId, myPlayerId, isSpectator]);
+
+  // ─── 사운드: 내 턴 시작 ────────────────
+  // 다른 플레이어 턴이 끝나고 내 턴으로 넘어왔을 때 알림
+  const prevTurnIdxRef = useRef(gameState?.currentPlayerIndex);
+  useEffect(() => {
+    if (!gameState || isSpectator) return;
+    const prev = prevTurnIdxRef.current;
+    const curr = gameState.currentPlayerIndex;
+    if (prev !== undefined && prev !== myPlayerIndex && curr === myPlayerIndex && gameState.phase === 'playing') {
+      playSound('myTurn');
+    }
+    prevTurnIdxRef.current = curr;
+  }, [gameState, myPlayerIndex, isSpectator]);
+
   if (!gameState) return null;
 
   const myPlayer = isSpectator ? undefined : gameState.players[myPlayerIndex];
@@ -238,6 +274,7 @@ export function Game({ mode }: GameProps) {
   }, [isMyTurn, turnPhase, gameState]);
 
   const handleConfirmTokens = () => {
+    playSound('takeTokens');
     doTakeTokens(selectedTokens);
     setSelectedTokens({});
     setUIMode('idle');
@@ -267,6 +304,7 @@ export function Game({ mode }: GameProps) {
 
   const handleBuyCard = () => {
     if (!selectedCard) return;
+    playSound('purchase');
     doPurchaseCard(selectedCard.id);
     setSelectedCard(null);
     setUIMode('idle');
@@ -274,6 +312,7 @@ export function Game({ mode }: GameProps) {
 
   const handleReserveCard = () => {
     if (!selectedCard) return;
+    playSound('reserve');
     doReserveCard(selectedCard.id);
     setSelectedCard(null);
     setUIMode('idle');
@@ -281,6 +320,7 @@ export function Game({ mode }: GameProps) {
 
   const handleDeckReserve = (level: 1 | 2 | 3) => {
     if (!isMyTurn || turnPhase !== 'idle') return;
+    playSound('reserve');
     doReserveCardFromDeck(level);
   };
 
