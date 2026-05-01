@@ -116,6 +116,22 @@ body {
   outline-offset: 2px;
 }
 
+/* ─── 연결 상태 배너 ────────────────── */
+
+.connection-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 8px 96px 8px 12px;
+  background: #f0a020;
+  color: #fff;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  z-index: 25;
+}
+
 /* ─── 시작 화면 ─────────────────────── */
 
 .start-screen {
