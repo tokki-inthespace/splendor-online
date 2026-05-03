@@ -1291,17 +1291,22 @@ body {
   justify-content: center;
   align-items: center;
   align-content: center;
-  gap: 4px 7px;
-  padding: 6px 5px;
-  min-height: 46px;
-  background: linear-gradient(to top, rgba(15, 15, 25, 0.92), rgba(15, 15, 25, 0.3));
-  backdrop-filter: blur(3px);
+  gap: 4px 8px;
+  padding: 7px 6px;
+  min-height: 52px;
+  background: linear-gradient(
+    to top,
+    rgba(10, 10, 18, 0.96) 0%,
+    rgba(10, 10, 18, 0.92) 60%,
+    rgba(10, 10, 18, 0.15) 100%
+  );
+  backdrop-filter: blur(4px);
   border-top: none;
 }
 
 .card-slot:has(.card-art) .cost-item {
-  font-size: 0.72rem;
-  gap: 3px;
+  font-size: 0.82rem;
+  gap: 4px;
 }
 
 /* 비용 종류가 4개 이상일 때 — 2x2 그리드로 강제 */
@@ -1309,30 +1314,32 @@ body {
   display: grid;
   grid-template-columns: repeat(2, auto);
   column-gap: 12px;
-  row-gap: 3px;
+  row-gap: 4px;
   justify-content: center;
   align-content: center;
 }
 
 .card-slot:has(.card-art) .cost-dot {
-  width: 12px;
-  height: 12px;
-  border-color: rgba(255, 255, 255, 0.4);
+  width: 14px;
+  height: 14px;
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
 .card-slot:has(.card-art) .cost-dot.gem-icon--fallback {
-  box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
 }
 
 .card-slot:has(.card-art) .cost-dot.gem-icon--art {
   border-color: transparent;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.95));
 }
 
 .card-slot:has(.card-art) .cost-num {
   color: #fff;
-  font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95);
+  font-weight: 800;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 1),
+    0 0 3px rgba(0, 0, 0, 0.8);
 }
 
 /* 일러스트 있을 때 — 보드게임 카드 스타일 (점수 뱃지 좌상단 + 요구량 하단 스트립) */
