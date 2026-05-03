@@ -715,6 +715,45 @@ body {
   font-weight: 700;
 }
 
+/* ─── wide-layout 패널 (상단/하단 좌석) ─── */
+/* 토큰+구매카드는 좌측 칼럼, 예약+귀족은 우측 칼럼으로 분리 */
+.player-panel.wide-layout {
+  width: auto;
+  min-width: 340px;
+}
+
+.player-panel.compact.wide-layout {
+  width: auto;
+  min-width: 320px;
+}
+
+.panel-body--wide {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.panel-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.panel-col--left {
+  flex: 0 1 auto;
+}
+
+.panel-col--right {
+  flex: 0 0 auto;
+  border-left: 1px solid var(--border-subtle);
+  padding-left: 16px;
+}
+
+.player-panel.compact.wide-layout .panel-body--wide { gap: 12px; }
+.player-panel.compact.wide-layout .panel-col { gap: 6px; }
+.player-panel.compact.wide-layout .panel-col--right { padding-left: 12px; }
+
 /* ─── 액션 바 ────────────────────────── */
 
 .action-bar {
