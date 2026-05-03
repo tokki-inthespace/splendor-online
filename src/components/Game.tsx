@@ -80,30 +80,6 @@ function EmotePicker({ onSelect, cooldownUntil }: {
   );
 }
 
-function DebugOverlay({ turnPhase, uiMode, currentPlayerIndex, myPlayerIndex, phase, isMyTurn, boardDisabled, playerNames }: {
-  turnPhase: string; uiMode: string; currentPlayerIndex: number; myPlayerIndex: number;
-  phase: string; isMyTurn: boolean; boardDisabled: boolean; playerNames: string[];
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="debug-overlay" onClick={() => setOpen(!open)}>
-      {open ? (
-        <>
-          <div>phase: {phase}</div>
-          <div>turnPhase: {turnPhase}</div>
-          <div>uiMode: {uiMode}</div>
-          <div>current: [{currentPlayerIndex}] {playerNames[currentPlayerIndex]}</div>
-          <div>me: [{myPlayerIndex}] {playerNames[myPlayerIndex]}</div>
-          <div>isMyTurn: {String(isMyTurn)}</div>
-          <div>boardDisabled: {String(boardDisabled)}</div>
-        </>
-      ) : (
-        <span>DBG</span>
-      )}
-    </div>
-  );
-}
-
 interface GameProps {
   mode: 'singleplayer' | 'multiplayer';
 }
@@ -387,7 +363,7 @@ export function Game({ mode }: GameProps) {
 
   const isMultiSeat = playerCount >= 3;
 
-  const opponentPanel = (player: typeof opponents[number], emotePosition: 'top' | 'side' = 'top') => {
+  const opponentPanel = (player: typeof opponents[number], emotePosition: 'top' | 'side' = 'top', wideLayout = false) => {
     const idx = gameState.players.indexOf(player);
     return (
       <PlayerPanel
@@ -398,6 +374,7 @@ export function Game({ mode }: GameProps) {
         isCurrentTurn={gameState.currentPlayerIndex === idx}
         activeEmote={activeEmotes[idx]?.emoteId ?? null}
         emotePosition={emotePosition}
+        wideLayout={wideLayout}
       />
     );
   };
@@ -421,6 +398,7 @@ export function Game({ mode }: GameProps) {
       onReservedCardClick={(card) => handleCardClick(card, 'reserved')}
       hiddenCardIds={pendingReservedIds}
       activeEmote={activeEmotes[myPlayerIndex]?.emoteId ?? null}
+      wideLayout
     />
   ) : null;
 
@@ -450,7 +428,7 @@ export function Game({ mode }: GameProps) {
       {/* 2인: 기존 레이아웃 */}
       {playerCount <= 2 && !isSpectator && (
         <>
-          {opponents[0] && opponentPanel(opponents[0], 'side')}
+          {opponents[0] && opponentPanel(opponents[0], 'side', true)}
           {boardElement}
           {myPanel}
         </>
@@ -459,16 +437,16 @@ export function Game({ mode }: GameProps) {
       {/* 2인 관전 */}
       {playerCount <= 2 && isSpectator && (
         <>
-          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side')}</div>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side', true)}</div>
           <div className="seat-center">{boardElement}</div>
-          <div className="seat-bottom">{opponents[1] && opponentPanel(opponents[1])}</div>
+          <div className="seat-bottom">{opponents[1] && opponentPanel(opponents[1], 'top', true)}</div>
         </>
       )}
 
       {/* 3인: 상단 + 좌측 + 보드 + 하단 */}
       {playerCount === 3 && !isSpectator && (
         <>
-          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side')}</div>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side', true)}</div>
           <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
           <div className="seat-center">{boardElement}</div>
           <div className="seat-bottom">{myPanel}</div>
@@ -478,17 +456,17 @@ export function Game({ mode }: GameProps) {
       {/* 3인 관전 */}
       {playerCount === 3 && isSpectator && (
         <>
-          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side')}</div>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side', true)}</div>
           <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
           <div className="seat-center">{boardElement}</div>
-          <div className="seat-bottom">{opponents[2] && opponentPanel(opponents[2])}</div>
+          <div className="seat-bottom">{opponents[2] && opponentPanel(opponents[2], 'top', true)}</div>
         </>
       )}
 
       {/* 4인: 상단 + 좌측 + 보드 + 우측 + 하단 */}
       {playerCount === 4 && !isSpectator && (
         <>
-          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side')}</div>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side', true)}</div>
           <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
           <div className="seat-center">{boardElement}</div>
           <div className="seat-right">{opponents[2] && opponentPanel(opponents[2])}</div>
@@ -499,11 +477,11 @@ export function Game({ mode }: GameProps) {
       {/* 4인 관전 */}
       {playerCount === 4 && isSpectator && (
         <>
-          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side')}</div>
+          <div className="seat-top">{opponents[0] && opponentPanel(opponents[0], 'side', true)}</div>
           <div className="seat-left">{opponents[1] && opponentPanel(opponents[1])}</div>
           <div className="seat-center">{boardElement}</div>
           <div className="seat-right">{opponents[2] && opponentPanel(opponents[2])}</div>
-          <div className="seat-bottom">{opponents[3] && opponentPanel(opponents[3])}</div>
+          <div className="seat-bottom">{opponents[3] && opponentPanel(opponents[3], 'top', true)}</div>
         </>
       )}
 
@@ -636,20 +614,6 @@ export function Game({ mode }: GameProps) {
       )}
 
       {/* 게임 종료 */}
-      {/* 디버그 오버레이 */}
-      {mode === 'multiplayer' && (
-        <DebugOverlay
-          turnPhase={turnPhase}
-          uiMode={uiMode}
-          currentPlayerIndex={gameState.currentPlayerIndex}
-          myPlayerIndex={myPlayerIndex}
-          phase={gameState.phase}
-          isMyTurn={isMyTurn}
-          boardDisabled={boardDisabled}
-          playerNames={gameState.players.map(p => p.name)}
-        />
-      )}
-
       {gameState.phase === 'ended' && gameState.winner && (
         <div className="modal-overlay">
           <div className="modal game-over">
